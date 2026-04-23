@@ -407,3 +407,23 @@ value: 2 / 10
 
 1. THE ArgumentParser.parse method SHALL return a tuple of `(ticker, stock_types, api_key, no_cache, refresh)` where `stock_types` is a `list[str]`.
 2. WHEN a single stock type is provided, THE ArgumentParser SHALL return a list containing that single stock type.
+
+### Requirement 24: MCP Server Interface
+
+**User Story:** As a developer, I want the stock screener exposed as an MCP (Model Context Protocol) server, so that LLM clients can invoke the screening pipeline programmatically without using the CLI.
+
+#### Acceptance Criteria
+
+1. THE project SHALL include a new file `stock_screener/mcp_server.py` that creates a FastMCP server instance named `"stock-screener"` using the `fastmcp` Python package.
+2. THE `mcp_server.py` file SHALL import and reuse existing classes (`FinvizScraper`, `HtmlParser`, `RatioConfigResolver`, `Scorer`, `IndustryAverageProvider`, `IndustryAverageCache`) without modifying any existing source files.
+3. THE MCP server SHALL expose a `stock_screener` tool that accepts a `ticker` (str), `stock_type` (str — comma-separated list of valid stock types), an optional `api_key` (str), an optional `no_cache` (bool, default False), and an optional `refresh` (bool, default False) parameter, and returns a structured dictionary containing the ticker, price, sector, industry, per-stock-type ratio data with real-time values, industry averages, scores, and a cumulative investment score.
+4. THE MCP server SHALL expose a `get_ratio_definitions` tool that accepts a `stock_type` (str) parameter and returns the list of ratio definitions (name, optimal value, importance, format type, compare direction) for that stock type.
+5. WHEN the `api_key` parameter is not provided to the `stock_screener` tool, THE MCP server SHALL fall back to reading the `OPENAI_API_KEY` environment variable.
+6. WHEN the `stock_screener` tool encounters a scraping error, an invalid stock type, or an HTML parsing error, THE tool SHALL return a dictionary containing an `"error"` key with a descriptive message rather than raising an exception.
+7. WHEN `no_cache` is True, THE `stock_screener` tool SHALL bypass the cache entirely (no reading, no writing), matching the behavior of the CLI `--no-cache` flag.
+8. WHEN `refresh` is True, THE `stock_screener` tool SHALL ignore existing cached data but write fresh API results back to the cache, matching the behavior of the CLI `--refresh` flag.
+9. WHEN both `no_cache` and `refresh` are True, THE `stock_screener` tool SHALL return a dictionary containing an `"error"` key indicating that the two options are mutually exclusive.
+10. WHEN neither `no_cache` nor `refresh` is True, THE `stock_screener` tool SHALL use the existing `IndustryAverageCache` with default caching behavior (read from cache if valid, write on miss).
+11. ALL tool return values SHALL be JSON-serializable dictionaries or lists — no Rich text, no Pandas DataFrames, and no styled terminal output.
+12. THE `mcp_server.py` file SHALL include an `if __name__ == "__main__"` block that calls `mcp.run()` to start the server using the default stdio transport.
+13. THE MCP server SHALL be registered as a workspace-level MCP server in `.kiro/settings/mcp.json` (not the global `~/.kiro/settings/mcp.json`) with a `"stock-screener"` entry that runs `python stock_screener/mcp_server.py`.
