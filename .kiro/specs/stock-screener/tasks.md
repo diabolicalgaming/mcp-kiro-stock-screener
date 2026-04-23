@@ -366,6 +366,15 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Build and return structured result dict with `ticker`, `price`, `sector`, `industry`, `stock_types` (list of per-type dicts with `type`, `score`, `max_score`, `ratios`), `total_score`, `total_max`, `percentage`
     - Wrap all operations in try-except — return `{"error": "..."}` on any unexpected failure
     - _Requirements: 24.2, 24.3, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11_
+  - [ ] 30.3 Implement `screen_stock` prompt in `stock_screener/mcp_server.py`
+    - Implement `screen_stock(ticker: str, stock_type: str) -> str` decorated with `@mcp.prompt`
+    - Return a prompt string that instructs the LLM to:
+      (a) Call the `stock_screener` tool with the provided ticker and stock type
+      (b) Display a banner header showing the ticker, price, and stock types before any tables
+      (c) Render a separate markdown table per stock type with columns: Ratio, Optimal Value, Industry Average, Real-Time Value, Importance
+      (d) Show the score per stock type above each table (e.g., "value: 2 / 10")
+      (e) End with the cumulative Investment Score as a percentage
+    - _Requirements: 24.14_
 
 - [ ] 31. Register MCP server in workspace configuration
   - [ ] 31.1 Create or update `.kiro/settings/mcp.json` with the stock-screener server entry
@@ -384,5 +393,6 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Ensure missing API key returns an error dict
   - Ensure invalid stock type returns an error dict
   - Ensure `.kiro/settings/mcp.json` contains the workspace-level server registration
+  - Ensure `screen_stock` prompt returns a well-formed instruction string that references the banner header, table format, scores, and Investment Score
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.

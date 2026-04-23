@@ -427,6 +427,7 @@ value: 2 / 10
 11. ALL tool return values SHALL be JSON-serializable dictionaries or lists — no Rich text, no Pandas DataFrames, and no styled terminal output.
 12. THE `mcp_server.py` file SHALL include an `if __name__ == "__main__"` block that calls `mcp.run()` to start the server using the default stdio transport.
 13. THE MCP server SHALL be registered as a workspace-level MCP server in `.kiro/settings/mcp.json` (not the global `~/.kiro/settings/mcp.json`) with a `"stock-screener"` entry that runs `python stock_screener/mcp_server.py`.
+14. THE MCP server SHALL expose a `screen_stock` prompt via `@mcp.prompt` that accepts a `ticker` (str) and `stock_type` (str) parameter and returns a prompt string instructing the LLM to: (a) call the `stock_screener` tool with the provided ticker and stock type, (b) display a banner header showing the ticker, price, and stock types before any tables, (c) render a separate markdown table per stock type with columns Ratio, Optimal Value, Industry Average, Real-Time Value, Importance, (d) show the score per stock type above each table (e.g., "value: 2 / 10"), and (e) end with the cumulative Investment Score as a percentage.
 
 #### Example Output
 
