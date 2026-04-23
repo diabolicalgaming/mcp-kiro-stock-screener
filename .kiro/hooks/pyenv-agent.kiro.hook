@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "name": "Pyenv Agent",
+  "description": "This agent is used to setup python environment whenever a terminal is opened.",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "export PYENV_ROOT=\"$HOME/.pyenv\" && export PATH=\"$PYENV_ROOT/bin:$PATH\" && eval \"$(pyenv init --path)\" && eval \"$(pyenv init -)\" && eval \"$(pyenv virtualenv-init -)\" && if ! pyenv version-name 2>/dev/null | grep -q '311.1'; then pyenv activate 311.1; fi"
+  },
+  "workspaceFolderName": "kiro-stock-screener",
+  "shortName": "pyenv-agent"
+}

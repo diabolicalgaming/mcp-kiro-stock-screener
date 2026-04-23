@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Pylint Agent",
+  "description": "Runs pylint on all Python files in the project directory automatically after any Python file is saved.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.py"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "export PYENV_ROOT=\"$HOME/.pyenv\" && export PATH=\"$PYENV_ROOT/bin:$PATH\" && eval \"$(pyenv init --path)\" && eval \"$(pyenv init -)\" && eval \"$(pyenv virtualenv-init -)\" && pyenv activate 311.1 && python -m pylint /Users/taaibor1/repos/mine/kiro-stock-screener/stock_screener/"
+  },
+  "workspaceFolderName": "kiro-stock-screener",
+  "shortName": "pylint-agent"
+}
