@@ -427,3 +427,109 @@ value: 2 / 10
 11. ALL tool return values SHALL be JSON-serializable dictionaries or lists — no Rich text, no Pandas DataFrames, and no styled terminal output.
 12. THE `mcp_server.py` file SHALL include an `if __name__ == "__main__"` block that calls `mcp.run()` to start the server using the default stdio transport.
 13. THE MCP server SHALL be registered as a workspace-level MCP server in `.kiro/settings/mcp.json` (not the global `~/.kiro/settings/mcp.json`) with a `"stock-screener"` entry that runs `python stock_screener/mcp_server.py`.
+
+#### Example Output
+
+**`stock_screener` tool** — `stock_screener(ticker="AAPL", stock_type="div,value")`:
+
+```json
+{
+  "ticker": "AAPL",
+  "price": "198.50",
+  "sector": "Technology",
+  "industry": "Consumer Electronics",
+  "stock_types": [
+    {
+      "type": "div",
+      "score": 0,
+      "max_score": 3,
+      "ratios": [
+        {
+          "name": "Dividend Yield",
+          "optimal": ">=2-5%",
+          "industry_average": "1.8%",
+          "realtime_value": "0.55%",
+          "importance": "% of share price paid as dividends yearly."
+        },
+        {
+          "name": "Dividend Payout",
+          "optimal": ">=30-70%",
+          "industry_average": "38%",
+          "realtime_value": "15.6%",
+          "importance": "% of earnings paid as dividend."
+        },
+        {
+          "name": "Dividend Growth Rate (3-5 yr)",
+          "optimal": ">=5-10% per year",
+          "industry_average": "7.2%",
+          "realtime_value": "4.3%",
+          "importance": "Shows the company can reliably increase payouts over time."
+        }
+      ]
+    },
+    {
+      "type": "value",
+      "score": 2,
+      "max_score": 10,
+      "ratios": [
+        {
+          "name": "Beta",
+          "optimal": "<1.0 low risk, >1.0 volatile",
+          "industry_average": "1.15",
+          "realtime_value": "1.24",
+          "importance": "Measures volatility vs overall market."
+        },
+        {
+          "name": "P/E",
+          "optimal": ">=20-50 (sector), <sector undervalued",
+          "industry_average": "28.5",
+          "realtime_value": "33.2",
+          "importance": "How much investors pay for $1 of earnings."
+        }
+      ]
+    }
+  ],
+  "total_score": 2,
+  "total_max": 13,
+  "percentage": 15.4
+}
+```
+
+**`get_ratio_definitions` tool** — `get_ratio_definitions(stock_type="div")`:
+
+```json
+{
+  "stock_type": "div",
+  "ratios": [
+    {
+      "name": "Dividend Yield",
+      "optimal": ">=2-5%",
+      "importance": "% of share price paid as dividends yearly.",
+      "format_type": "percentage",
+      "compare_direction": "higher_is_better"
+    },
+    {
+      "name": "Dividend Payout",
+      "optimal": ">=30-70%",
+      "importance": "% of earnings paid as dividend.",
+      "format_type": "percentage",
+      "compare_direction": "higher_is_better"
+    },
+    {
+      "name": "Dividend Growth Rate (3-5 yr)",
+      "optimal": ">=5-10% per year",
+      "importance": "Shows the company can reliably increase payouts over time.",
+      "format_type": "percentage",
+      "compare_direction": "higher_is_better"
+    }
+  ]
+}
+```
+
+**Error response** — `stock_screener(ticker="AAPL", stock_type="invalid")`:
+
+```json
+{
+  "error": "Unknown stock type 'invalid'. Valid types: ['div', 'growth', 'value']"
+}
+```
