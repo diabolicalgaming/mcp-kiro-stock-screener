@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Stock Screener is a Python 3.11.1 (managed via pyenv) command-line application that retrieves and displays financial ratios for dividend, growth, and value stocks. It scrapes data from finviz.com using Selenium with a headless browser, parses the HTML with BeautifulSoup, fetches industry-average values via the OpenAI API, loads all data into a Pandas DataFrame, and renders a styled five-column table to the terminal using Rich.
+The Stock Screener is a Python 3.11.1 (managed via pyenv) application that retrieves and displays financial ratios for dividend, growth, and value stocks. It provides two interfaces: a CLI for direct terminal use and an MCP (Model Context Protocol) server for programmatic access by LLM clients. It scrapes data from finviz.com using Selenium with a headless browser, parses the HTML with BeautifulSoup, fetches industry-average values via the OpenAI API, loads all data into a Pandas DataFrame, and renders a styled five-column table to the terminal using Rich.
 
 The application supports multiple stock types in a single invocation via a comma-separated second argument (e.g., `python main.py AAPL growth,value`). When multiple types are requested, the application fetches the ticker's HTML page once, renders a single banner header listing all types, and produces one ratio table per stock type — each preceded by a stock-type label showing the investment score for that type. Cache and industry-average operations are performed independently per stock type within the same run.
 
@@ -22,6 +22,8 @@ Key technology choices driven by steering rules:
 ```mermaid
 flowchart TD
     A[CLI Entry Point: main.py] --> B[ArgumentParser]
+    MCP[MCP Server: mcp_server.py] --> F
+    MCP --> E
     B --> C{Valid Args?}
     C -- No --> D[Rich Error Output + Exit 1]
     C -- Yes --> F[FinvizScraper - Selenium: single fetch]
@@ -50,6 +52,12 @@ flowchart TD
     NEXT -- No --> BNR[Render Investment Score Banner]
     BNR --> P[Exit 0]
 ```
+
+The application has two entry points:
+1. **CLI** (`main.py`): Parses CLI args → runs the full pipeline → renders styled terminal output via Rich
+2. **MCP Server** (`mcp_server.py`): Receives tool calls from LLM clients → runs the same pipeline using the same classes → returns structured JSON data
+
+Both entry points share the same backend components: `FinvizScraper`, `HtmlParser`, `RatioConfigResolver`, `IndustryAverageProvider`, `IndustryAverageCache`, and `Scorer`. The CLI path uses `TableRenderer` for styled output; the MCP path builds plain dicts instead.
 
 The pipeline is: parse CLI args (ticker, stock_types list, `--api-key`, `--no-cache`, `--refresh`) → fetch finviz page once via Selenium → parse HTML with BeautifulSoup (price, sector, industry) → render banner header once with all stock types → **loop per stock type**: resolve ratio set → parse ratios from cached HTML → check cache for industry averages → on miss: fetch via OpenAI API with sector/industry context and write to cache → build five-column DataFrame → compute investment score via `Scorer` → render stock-type label with score → render styled table via Rich → **after loop**: render cumulative Investment Score banner.
 
@@ -654,6 +662,134 @@ if __name__ == "__main__":
     main()
 ```
 
+### 9. `stock_screener/mcp_server.py` — MCP Server Interface (NEW)
+
+Exposes the stock screener pipeline as an MCP server using FastMCP. This is a thin adapter layer that imports and reuses existing classes without modifying them. Returns structured JSON-serializable data instead of Rich-styled terminal output.
+
+```python
+from __future__ import annotations
+
+import os
+
+from fastmcp import FastMCP
+
+from stock_screener.cache import IndustryAverageCache
+from stock_screener.industry import IndustryAverageProvider
+from stock_screener.parser import HtmlParser
+from stock_screener.ratios import RatioInfo
+from stock_screener.ratios import RatioConfigResolver
+from stock_screener.scorer import Scorer
+from stock_screener.scraper import ScrapeError
+from stock_screener.scraper import FinvizScraper
+
+
+mcp: FastMCP = FastMCP("stock-screener")
+
+
+@mcp.tool
+def stock_screener(
+    ticker: str,
+    stock_type: str,
+    api_key: str = "",
+    no_cache: bool = False,
+    refresh: bool = False,
+) -> dict:
+    """
+    Screen a stock by ticker and type(s).
+
+    Args:
+        ticker: Stock ticker symbol (e.g. AAPL, MSFT).
+        stock_type: Comma-separated stock types: div, growth, value.
+        api_key: OpenAI API key. Falls back to OPENAI_API_KEY env var.
+        no_cache: Disable cache entirely — no reading or writing.
+        refresh: Ignore cached data but write fresh results to cache.
+
+    Returns a dict with ticker, price, sector, industry,
+    per-type ratio data with scores, and cumulative investment score.
+    Returns a dict with an "error" key on failure.
+    """
+    ...
+
+
+@mcp.tool
+def get_ratio_definitions(stock_type: str) -> dict:
+    """
+    Get the ratio definitions for a stock type.
+
+    Args:
+        stock_type: One of: div, growth, value.
+
+    Returns a dict with the stock_type and a list of ratio definitions,
+    each containing name, optimal, importance, format_type, and compare_direction.
+    Returns a dict with an "error" key for invalid stock types.
+    """
+    ...
+
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+Design decisions for `mcp_server.py`:
+- Uses module-level `FastMCP("stock-screener")` instance — tools are registered via `@mcp.tool` decorator
+- `stock_screener` tool replicates the core pipeline from `StockScreenerApp.run()` but returns structured data instead of rendering to terminal
+- `get_ratio_definitions` tool is a lightweight lookup that wraps `RatioConfigResolver.get_ratio_set()` — no scraping or API calls needed
+- API key resolution: uses the `api_key` parameter if non-empty, otherwise falls back to `os.environ.get("OPENAI_API_KEY")`
+- `no_cache` and `refresh` parameters mirror the CLI `--no-cache` and `--refresh` flags with identical semantics
+- Mutual exclusion of `no_cache` and `refresh` is validated at the tool level — returns an error dict if both are True
+- All errors (scraping failures, invalid stock types, HTML parsing errors) are caught and returned as `{"error": "..."}` dicts — no exceptions propagate to the MCP client
+- No Rich console, no Pandas DataFrames, no styled output — all return values are plain dicts/lists
+- `mcp.run()` uses the default stdio transport, suitable for local MCP server registration
+- Existing classes are instantiated fresh per tool call (stateless) — `FinvizScraper`, `HtmlParser`, `Scorer`, `RatioConfigResolver`, `IndustryAverageProvider`, `IndustryAverageCache` are all reused as-is
+
+Return structure for `stock_screener` tool:
+```python
+{
+    "ticker": "AAPL",
+    "price": "198.50",
+    "sector": "Technology",
+    "industry": "Consumer Electronics",
+    "stock_types": [
+        {
+            "type": "value",
+            "score": 2,
+            "max_score": 10,
+            "ratios": [
+                {
+                    "name": "P/E",
+                    "optimal": ">=20-50 (sector), <sector undervalued",
+                    "industry_average": "28.5",
+                    "realtime_value": "33.2",
+                    "importance": "How much investors pay for $1 of earnings."
+                },
+                ...
+            ]
+        },
+        ...
+    ],
+    "total_score": 2,
+    "total_max": 13,
+    "percentage": 15.4
+}
+```
+
+Return structure for `get_ratio_definitions` tool:
+```python
+{
+    "stock_type": "value",
+    "ratios": [
+        {
+            "name": "P/E",
+            "optimal": ">=20-50 (sector), <sector undervalued",
+            "importance": "How much investors pay for $1 of earnings.",
+            "format_type": "multiple",
+            "compare_direction": "lower_is_better"
+        },
+        ...
+    ]
+}
+```
+
 ### Package Structure
 
 ```
@@ -663,12 +799,13 @@ stock_screener/
     cache.py            # IndustryAverageCache (new)
     cli.py              # ArgumentParser (updated)
     industry.py         # IndustryAverageProvider (new)
+    mcp_server.py       # FastMCP server interface (new — Requirement 24)
     ratios.py           # RatioInfo, RatioConfigResolver (updated)
     scorer.py           # Scorer (new)
     scraper.py          # FinvizScraper, ScrapeError
     parser.py           # HtmlParser
     renderer.py         # TableRenderer (updated)
-main.py                 # Entry point
+main.py                 # CLI entry point
 ```
 
 ## Data Models
@@ -858,6 +995,10 @@ All error-prone operations use try-except blocks as required by coding standards
 | Cache directory cannot be created | `IndustryAverageCache` | Log warning to console, continue without caching |
 | Scorer receives unparseable real-time or industry average value | `Scorer._parse_numeric` | Extracts last numeric token via regex; returns `None` if no tokens found or unparseable — ratio does not contribute to score (no crash) |
 | Scorer receives "N/A" for real-time or industry average | `Scorer.score_ratios` | Ratio is skipped — no point scored, but still counted in max_score |
+| MCP tool receives invalid stock type | `mcp_server.stock_screener` / `mcp_server.get_ratio_definitions` | Return `{"error": "..."}` dict with descriptive message — no exception raised |
+| MCP tool receives both `no_cache=True` and `refresh=True` | `mcp_server.stock_screener` | Return `{"error": "..."}` dict indicating mutual exclusion — no exception raised |
+| MCP tool encounters scraping or parsing error | `mcp_server.stock_screener` | Return `{"error": "..."}` dict with descriptive message — no exception raised |
+| MCP tool missing API key (no parameter and no env var) | `mcp_server.stock_screener` | Return `{"error": "..."}` dict indicating missing API key — no exception raised |
 
 All errors that cause early exit use `sys.exit(1)`. Successful runs use `sys.exit(0)`. Error messages are printed using Rich console for consistent styled output.
 

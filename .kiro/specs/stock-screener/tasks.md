@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Python CLI stock screener that accepts a ticker symbol and one or more comma-separated stock types (div, growth, value). It scrapes financial ratios from finviz.com using Selenium, parses HTML with BeautifulSoup, and retrieves sector/industry-aware industry averages via the OpenAI API. Industry averages are cached locally at `~/.stock_screener/cache.json` with a 7-day TTL, controllable via `--no-cache` and `--refresh` flags. An investment scoring system compares real-time values against industry averages per ratio, with dividend ratios requiring an additional optimal-range gate. Results are loaded into Pandas DataFrames and rendered as styled terminal tables via tabulate and Rich, with per-type score labels and a cumulative Investment Score banner. Full OOP, strict typing, PEP 8, snake_case throughout. No tests per coding standards.
+A Python CLI stock screener that accepts a ticker symbol and one or more comma-separated stock types (div, growth, value). It scrapes financial ratios from finviz.com using Selenium, parses HTML with BeautifulSoup, and retrieves sector/industry-aware industry averages via the OpenAI API. Industry averages are cached locally at `~/.stock_screener/cache.json` with a 7-day TTL, controllable via `--no-cache` and `--refresh` flags. An investment scoring system compares real-time values against industry averages per ratio, with dividend ratios requiring an additional optimal-range gate. Results are loaded into Pandas DataFrames and rendered as styled terminal tables via tabulate and Rich, with per-type score labels and a cumulative Investment Score banner. The application is also exposed as an MCP server via FastMCP, providing `stock_screener` and `get_ratio_definitions` tools that return structured JSON data for LLM client consumption. Full OOP, strict typing, PEP 8, snake_case throughout. No tests per coding standards.
 
 ## Notes
 
@@ -18,6 +18,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
 - Tasks 24-27 cover multi-stock-type support (Requirements 16-23).
 - The format-aware industry average prompt fix is merged into Task 2 (`format_type` field on `RatioInfo`) and Task 21 (format-aware `_build_prompt` + stale cache clearing).
 - Tasks 28-29 cover the investment scoring system feature including compound finviz value parsing and dual-gate dividend scoring. Task 2.2 adds `compare_direction` to `RatioInfo`, Task 28 updates the `Scorer` class, Tasks 25.2-25.3 update the renderer for score display, and Task 26.4 integrates scoring into the app pipeline.
+- Tasks 30-32 cover the MCP server interface (Requirement 24). Task 30 creates `mcp_server.py` with two tools (`stock_screener` and `get_ratio_definitions`), Task 31 registers the server in workspace-level `.kiro/settings/mcp.json`, and Task 32 is the verification checkpoint. The `fastmcp` package must be installed before implementing Task 30.
 
 ## Tasks
 
@@ -339,5 +340,49 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Ensure `render_stock_type_label` displays score in the format `{stock_type}: {score} / {max}` with correct colors
   - Ensure `render_score_banner` displays the cumulative Investment Score panel with correct color thresholds
   - Ensure the scoring pipeline is integrated into `StockScreenerApp.run()` with score accumulation and `stock_type` passed to `score_ratios`
+  - Run mypy and pylint to verify no type or lint errors
+  - Ask the user if questions arise.
+
+- [ ] 30. Create MCP server module with FastMCP
+  - [ ] 30.1 Create `stock_screener/mcp_server.py` with FastMCP server instance and `get_ratio_definitions` tool
+    - Import `FastMCP` from `fastmcp`
+    - Create module-level `mcp: FastMCP = FastMCP("stock-screener")` instance
+    - Import `RatioConfigResolver` and `RatioInfo` from `stock_screener.ratios`
+    - Implement `get_ratio_definitions(stock_type: str) -> dict` tool decorated with `@mcp.tool`
+    - On valid stock type: return `{"stock_type": ..., "ratios": [...]}` where each ratio is a dict with `name`, `optimal`, `importance`, `format_type`, `compare_direction`
+    - On invalid stock type (`ValueError` from `RatioConfigResolver`): return `{"error": "..."}` with descriptive message
+    - Add `if __name__ == "__main__": mcp.run()` entry point block
+    - Use strict typing on all parameters and return types
+    - _Requirements: 24.1, 24.2, 24.4, 24.8, 24.11, 24.12_
+  - [ ] 30.2 Implement `stock_screener` tool in `stock_screener/mcp_server.py`
+    - Import `FinvizScraper`, `ScrapeError`, `HtmlParser`, `Scorer`, `IndustryAverageProvider`, `IndustryAverageCache` from existing modules
+    - Implement `stock_screener(ticker, stock_type, api_key, no_cache, refresh) -> dict` tool decorated with `@mcp.tool`
+    - Validate mutual exclusion: if both `no_cache` and `refresh` are True, return `{"error": "..."}`
+    - Resolve API key: use `api_key` parameter if non-empty, else fall back to `os.environ.get("OPENAI_API_KEY")`, return `{"error": "..."}` if neither available
+    - Parse comma-separated `stock_type` string, validate each against `RatioConfigResolver`, return `{"error": "..."}` on invalid type
+    - Fetch finviz page once via `FinvizScraper.fetch_page(ticker)`, catch `ScrapeError` and return `{"error": "..."}`
+    - Parse HTML for price, sector, industry via `HtmlParser`
+    - Loop per stock type: resolve ratios, parse values, check/update cache respecting `no_cache`/`refresh` flags, fetch industry averages on miss, compute score via `Scorer`
+    - Build and return structured result dict with `ticker`, `price`, `sector`, `industry`, `stock_types` (list of per-type dicts with `type`, `score`, `max_score`, `ratios`), `total_score`, `total_max`, `percentage`
+    - Wrap all operations in try-except — return `{"error": "..."}` on any unexpected failure
+    - _Requirements: 24.2, 24.3, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11_
+
+- [ ] 31. Register MCP server in workspace configuration
+  - [ ] 31.1 Create or update `.kiro/settings/mcp.json` with the stock-screener server entry
+    - Add `"stock-screener"` entry with `"command": "python"` and `"args": ["stock_screener/mcp_server.py"]`
+    - Set `"disabled": false` and `"autoApprove": []`
+    - If the file already exists, merge the new entry without overwriting existing servers
+    - _Requirements: 24.13_
+
+- [ ] 32. Checkpoint - Verify MCP server integration
+  - Ensure `stock_screener/mcp_server.py` is syntactically correct and importable
+  - Ensure `fastmcp` package is installed
+  - Ensure `get_ratio_definitions` tool returns correct ratio data for all three stock types (div, growth, value)
+  - Ensure `stock_screener` tool returns structured data with scores for a valid ticker
+  - Ensure `no_cache` and `refresh` flags work correctly through the MCP tool
+  - Ensure mutual exclusion of `no_cache` and `refresh` returns an error dict
+  - Ensure missing API key returns an error dict
+  - Ensure invalid stock type returns an error dict
+  - Ensure `.kiro/settings/mcp.json` contains the workspace-level server registration
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
