@@ -4,6 +4,9 @@
       "command": "/Users/taaibor1/.pyenv/versions/311.1/bin/python",
       "args": ["-m", "stock_screener.mcp_server"],
       "cwd": "/Users/taaibor1/repos/mine/mcp-kiro-stock-screener",
+      "env": {
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
+      },
       "disabled": false,
       "autoApprove": []
     }
