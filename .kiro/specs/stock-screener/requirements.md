@@ -431,70 +431,190 @@ value: 2 / 10
 
 #### Example Output
 
-**`stock_screener` tool** — `stock_screener(ticker="AAPL", stock_type="div,value")`:
+**`stock_screener` tool** — Input passed to the MCP server:
 
 ```json
 {
-  "ticker": "AAPL",
-  "price": "198.50",
+  "ticker": "NVDA",
+  "stock_type": "growth,value"
+}
+```
+
+Output:
+
+```json
+{
+  "ticker": "NVDA",
+  "price": "199.64",
   "sector": "Technology",
-  "industry": "Consumer Electronics",
+  "industry": "Semiconductors",
   "stock_types": [
     {
-      "type": "div",
-      "score": 0,
-      "max_score": 3,
+      "type": "growth",
+      "score": 6,
+      "max_score": 6,
       "ratios": [
         {
-          "name": "Dividend Yield",
-          "optimal": ">=2-5%",
-          "industry_average": "1.8%",
-          "realtime_value": "0.55%",
-          "importance": "% of share price paid as dividends yearly."
+          "name": "Gross Margin",
+          "optimal": ">=40%",
+          "industry_average": "53%",
+          "realtime_value": "71.07%",
+          "importance": "% of revenue left after production costs."
         },
         {
-          "name": "Dividend Payout",
-          "optimal": ">=30-70%",
-          "industry_average": "38%",
-          "realtime_value": "15.6%",
-          "importance": "% of earnings paid as dividend."
+          "name": "Operating Margin",
+          "optimal": ">=15%",
+          "industry_average": "24%",
+          "realtime_value": "60.38%",
+          "importance": "Profit from core business before taxes."
         },
         {
-          "name": "Dividend Growth Rate (3-5 yr)",
-          "optimal": ">=5-10% per year",
-          "industry_average": "7.2%",
-          "realtime_value": "4.3%",
-          "importance": "Shows the company can reliably increase payouts over time."
+          "name": "ROE",
+          "optimal": ">=15%",
+          "industry_average": "18%",
+          "realtime_value": "101.49%",
+          "importance": "Profitability of shareholder's capital."
+        },
+        {
+          "name": "ROA",
+          "optimal": ">=5%",
+          "industry_average": "10%",
+          "realtime_value": "75.42%",
+          "importance": "Profitability using all company assets."
+        },
+        {
+          "name": "EPS YoY",
+          "optimal": ">=15% annually",
+          "industry_average": "14%",
+          "realtime_value": "73.51%",
+          "importance": "Shows how fast profits are growing."
+        },
+        {
+          "name": "EPS YoY (TTM)",
+          "optimal": ">=10%",
+          "industry_average": "12%",
+          "realtime_value": "66.12%",
+          "importance": "Measures if the company can actually grow its earnings."
         }
       ]
     },
     {
       "type": "value",
-      "score": 2,
+      "score": 5,
       "max_score": 10,
       "ratios": [
         {
           "name": "Beta",
           "optimal": "<1.0 low risk, >1.0 volatile",
-          "industry_average": "1.15",
-          "realtime_value": "1.24",
+          "industry_average": "1.35",
+          "realtime_value": "2.28",
           "importance": "Measures volatility vs overall market."
         },
         {
           "name": "P/E",
           "optimal": ">=20-50 (sector), <sector undervalued",
-          "industry_average": "28.5",
-          "realtime_value": "33.2",
+          "industry_average": "31.0",
+          "realtime_value": "40.73",
           "importance": "How much investors pay for $1 of earnings."
+        },
+        {
+          "name": "Forward P/E",
+          "optimal": "<industry avg, >=10-20 stability",
+          "industry_average": "24.0",
+          "realtime_value": "17.93",
+          "importance": "Shows if the stock is cheap or expensive based on future earnings."
+        },
+        {
+          "name": "PEG",
+          "optimal": "<1.0",
+          "industry_average": "1.8",
+          "realtime_value": "0.46",
+          "importance": "PEG <1.0 suggests undervalued relative to growth prospects."
+        },
+        {
+          "name": "P/B",
+          "optimal": "<1.5 stability, <1.0 undervaluation",
+          "industry_average": "6.8",
+          "realtime_value": "30.85",
+          "importance": "Compares market value to net assets."
+        },
+        {
+          "name": "P/S",
+          "optimal": "<2.0, <1.0 cheap",
+          "industry_average": "8.5",
+          "realtime_value": "22.47",
+          "importance": "Compares price to annual revenue."
+        },
+        {
+          "name": "EV/EBITDA",
+          "optimal": "<10 signals undervaluation",
+          "industry_average": "20.5",
+          "realtime_value": "36.03",
+          "importance": "Compares total company value to operating cash earnings."
+        },
+        {
+          "name": "Debt/EQ",
+          "optimal": "<1.0 for value stocks",
+          "industry_average": "0.42",
+          "realtime_value": "0.07",
+          "importance": "Shows reliance on debt vs own capital."
+        },
+        {
+          "name": "LT Debt/EQ",
+          "optimal": "<1.0 most sectors, <0.5 stable for dividend stocks",
+          "industry_average": "0.28",
+          "realtime_value": "0.06",
+          "importance": "Indicates financial stability and how safely dividends can be maintained."
+        },
+        {
+          "name": "Current Ratio",
+          "optimal": ">1.5 comfortable, <1.0 liquidity issues",
+          "industry_average": "2.6",
+          "realtime_value": "3.91",
+          "importance": "Ability to cover ST liabilities with ST assets."
         }
       ]
     }
   ],
-  "total_score": 2,
-  "total_max": 13,
-  "percentage": 15.4
+  "total_score": 11,
+  "total_max": 16,
+  "percentage": 68.8
 }
 ```
+
+**LLM-rendered output** (when an LLM client receives the above JSON, it renders it as):
+
+> **NVDA  $199.64  (growth, value)**
+>
+> **growth: 6 / 6**
+>
+> | Ratio | Optimal Value | Industry Average | Real-Time Value | Importance |
+> |---|---|---|---|---|
+> | Gross Margin | >=40% | 53% | 71.07% | % of revenue left after production costs. |
+> | Operating Margin | >=15% | 24% | 60.38% | Profit from core business before taxes. |
+> | ROE | >=15% | 18% | 101.49% | Profitability of shareholder's capital. |
+> | ROA | >=5% | 10% | 75.42% | Profitability using all company assets. |
+> | EPS YoY | >=15% annually | 14% | 73.51% | Shows how fast profits are growing. |
+> | EPS YoY (TTM) | >=10% | 12% | 66.12% | Measures if the company can actually grow its earnings. |
+>
+> **value: 5 / 10**
+>
+> | Ratio | Optimal Value | Industry Average | Real-Time Value | Importance |
+> |---|---|---|---|---|
+> | Beta | <1.0 low risk, >1.0 volatile | 1.35 | 2.28 | Measures volatility vs overall market. |
+> | P/E | >=20-50 (sector), <sector undervalued | 31.0 | 40.73 | How much investors pay for $1 of earnings. |
+> | Forward P/E | <industry avg, >=10-20 stability | 24.0 | 17.93 | Shows if stock is cheap or expensive based on future earnings. |
+> | PEG | <1.0 | 1.8 | 0.46 | PEG <1.0 suggests undervalued relative to growth prospects. |
+> | P/B | <1.5 stability, <1.0 undervaluation | 6.8 | 30.85 | Compares market value to net assets. |
+> | P/S | <2.0, <1.0 cheap | 8.5 | 22.47 | Compares price to annual revenue. |
+> | EV/EBITDA | <10 signals undervaluation | 20.5 | 36.03 | Compares total company value to operating cash earnings. |
+> | Debt/EQ | <1.0 for value stocks | 0.42 | 0.07 | Shows reliance on debt vs own capital. |
+> | LT Debt/EQ | <1.0 most sectors, <0.5 stable | 0.28 | 0.06 | Indicates financial stability. |
+> | Current Ratio | >1.5 comfortable, <1.0 liquidity | 2.6 | 3.91 | Ability to cover ST liabilities with ST assets. |
+>
+> **Investment Score: 11 / 16 (68.8%)**
+>
+> NVDA crushes it on growth — perfect 6/6 with every metric well above industry averages. On the value side, it scores 5/10 — strong on debt metrics (Debt/EQ 0.07 vs 0.42 industry avg) and Forward P/E (17.93 vs 24.0), but the premium valuation shows in P/B, P/S, and EV/EBITDA being well above industry norms. Classic high-growth stock profile.
 
 **`get_ratio_definitions` tool** — `get_ratio_definitions(stock_type="div")`:
 
