@@ -314,8 +314,8 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Verify `--no-cache` and `--refresh` flags apply uniformly to all stock types
   - Ask the user if questions arise.
 
-- [ ] 28. Update `stock_screener/scorer.py` — `Scorer` class
-  - [ ] 28.1 Update `_parse_numeric` in `stock_screener/scorer.py` to handle compound finviz values
+- [x] 28. Update `stock_screener/scorer.py` — `Scorer` class
+  - [x] 28.1 Update `_parse_numeric` in `stock_screener/scorer.py` to handle compound finviz values
     - Add `import re` to the module imports
     - Replace the current strip-and-float logic with `re.findall(r"-?[\d.]+", stripped)` to extract all numeric tokens
     - Take the last token (`tokens[-1]`) and convert to `float`
@@ -323,7 +323,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - This handles compound finviz formats: `"4.23 (2.91%)"` → `2.91`, `"5.04% 6.13%"` → `6.13`, `"62.63%"` → `62.63`
     - Growth and value ratios are unaffected since they return single-value strings from finviz
     - _Requirements: 5.4, 19 (scoring system)_
-  - [ ] 28.2 Update `score_ratios` in `stock_screener/scorer.py` to implement dual-gate scoring for dividend ratios
+  - [x] 28.2 Update `score_ratios` in `stock_screener/scorer.py` to implement dual-gate scoring for dividend ratios
     - Add `stock_type: str = ""` as an optional parameter to `score_ratios()`
     - For growth and value stock types: scoring logic remains unchanged (beat industry average only)
     - For dividend stock type (`stock_type == "div"`): a ratio scores a point only when BOTH conditions are met:
@@ -332,7 +332,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Reuse the optimal range parsing logic from `TableRenderer._parse_optimal` / `_OptimalRange.is_within`
     - _Requirements: 5.4, 19 (scoring rules)_
 
-- [ ] 29. Checkpoint - Verify scoring system with compound value parsing and dual-gate dividend scoring
+- [x] 29. Checkpoint - Verify scoring system with compound value parsing and dual-gate dividend scoring
   - Ensure `stock_screener/scorer.py` is syntactically correct and importable
   - Ensure `_parse_numeric` correctly extracts the last numeric token from compound finviz values
   - Ensure dividend scoring requires both beating the industry average and falling within the optimal range
@@ -343,8 +343,8 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
 
-- [ ] 30. Create MCP server module with FastMCP
-  - [ ] 30.1 Create `stock_screener/mcp_server.py` with FastMCP server instance and `get_ratio_definitions` tool
+- [x] 30. Create MCP server module with FastMCP
+  - [x] 30.1 Create `stock_screener/mcp_server.py` with FastMCP server instance and `get_ratio_definitions` tool
     - Import `FastMCP` from `fastmcp`
     - Create module-level `mcp: FastMCP = FastMCP("stock-screener")` instance
     - Import `RatioConfigResolver` and `RatioInfo` from `stock_screener.ratios`
@@ -354,7 +354,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Add `if __name__ == "__main__": mcp.run()` entry point block
     - Use strict typing on all parameters and return types
     - _Requirements: 24.1, 24.2, 24.4, 24.8, 24.11, 24.12_
-  - [ ] 30.2 Implement `stock_screener` tool in `stock_screener/mcp_server.py`
+  - [x] 30.2 Implement `stock_screener` tool in `stock_screener/mcp_server.py`
     - Import `FinvizScraper`, `ScrapeError`, `HtmlParser`, `Scorer`, `IndustryAverageProvider`, `IndustryAverageCache` from existing modules
     - Implement `stock_screener(ticker, stock_type, api_key, no_cache, refresh) -> dict` tool decorated with `@mcp.tool`
     - Validate mutual exclusion: if both `no_cache` and `refresh` are True, return `{"error": "..."}`
@@ -366,7 +366,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Build and return structured result dict with `ticker`, `price`, `sector`, `industry`, `stock_types` (list of per-type dicts with `type`, `score`, `max_score`, `ratios`), `total_score`, `total_max`, `percentage`
     - Wrap all operations in try-except — return `{"error": "..."}` on any unexpected failure
     - _Requirements: 24.2, 24.3, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11_
-  - [ ] 30.3 Implement `screen_stock` prompt in `stock_screener/mcp_server.py`
+  - [x] 30.3 Implement `screen_stock` prompt in `stock_screener/mcp_server.py`
     - Implement `screen_stock(ticker: str, stock_type: str) -> str` decorated with `@mcp.prompt`
     - Return a prompt string that instructs the LLM to:
       (a) Call the `stock_screener` tool with the provided ticker and stock type
@@ -376,14 +376,14 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       (e) End with the cumulative Investment Score as a percentage
     - _Requirements: 24.14_
 
-- [ ] 31. Register MCP server in workspace configuration
-  - [ ] 31.1 Create or update `.kiro/settings/mcp.json` with the stock-screener server entry
+- [x] 31. Register MCP server in workspace configuration
+  - [x] 31.1 Create or update `.kiro/settings/mcp.json` with the stock-screener server entry
     - Add `"stock-screener"` entry with `"command": "python"` and `"args": ["stock_screener/mcp_server.py"]`
     - Set `"disabled": false` and `"autoApprove": []`
     - If the file already exists, merge the new entry without overwriting existing servers
     - _Requirements: 24.13_
 
-- [ ] 32. Checkpoint - Verify MCP server integration
+- [x] 32. Checkpoint - Verify MCP server integration
   - Ensure `stock_screener/mcp_server.py` is syntactically correct and importable
   - Ensure `fastmcp` package is installed
   - Ensure `get_ratio_definitions` tool returns correct ratio data for all three stock types (div, growth, value)
