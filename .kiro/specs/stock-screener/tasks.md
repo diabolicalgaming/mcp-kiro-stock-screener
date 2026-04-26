@@ -368,13 +368,20 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - _Requirements: 24.2, 24.3, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11_
   - [x] 30.3 Implement `screen_stock` prompt in `stock_screener/mcp_server.py`
     - Implement `screen_stock(ticker: str, stock_type: str) -> str` decorated with `@mcp.prompt`
-    - Return a prompt string that instructs the LLM to:
-      (a) Call the `stock_screener` tool with the provided ticker and stock type
+    - The `ticker` parameter accepts one or more comma-separated ticker symbols (e.g., `"AAPL"` or `"AAPL,MSFT,GOOG"`)
+    - Split the `ticker` string on commas, strip whitespace, and uppercase each ticker
+    - For a single ticker, return a prompt string that instructs the LLM to:
+      (a) Call the `stock_screener` tool once with the provided ticker and stock type
       (b) Display a banner header showing the ticker, price, and stock types before any tables
       (c) Render a separate markdown table per stock type with columns: Ratio, Optimal Value, Industry Average, Real-Time Value, Importance
       (d) Show the score per stock type above each table (e.g., "value: 2 / 10")
       (e) End with the cumulative Investment Score as a percentage
-    - _Requirements: 24.14_
+    - For multiple tickers, return a prompt string that instructs the LLM to:
+      (a) Call the `stock_screener` tool once per ticker (all calls can be made in parallel)
+      (b) Render results for each ticker separately, one after another
+      (c) Use the same per-ticker format as single-ticker (banner header, per-type tables with scores, Investment Score)
+      (d) Separate each ticker's output with a horizontal rule (`---`)
+    - _Requirements: 24.14, 24.15, 24.16_
 
 - [x] 31. Register MCP server in workspace configuration
   - [x] 31.1 Create or update `.kiro/settings/mcp.json` with the stock-screener server entry
@@ -394,5 +401,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Ensure invalid stock type returns an error dict
   - Ensure `.kiro/settings/mcp.json` contains the workspace-level server registration
   - Ensure `screen_stock` prompt returns a well-formed instruction string that references the banner header, table format, scores, and Investment Score
+  - Ensure `screen_stock` prompt handles single ticker input (e.g., `"AAPL"`) with a single tool call instruction
+  - Ensure `screen_stock` prompt handles multi-ticker input (e.g., `"AAPL,MSFT,GOOG"`) with per-ticker tool call instructions and horizontal rule separators
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.

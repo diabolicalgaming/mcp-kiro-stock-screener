@@ -729,14 +729,16 @@ def get_ratio_definitions(stock_type: str) -> dict:
 @mcp.prompt
 def screen_stock(ticker: str, stock_type: str) -> str:
     """
-    Prompt template for screening a stock with formatted table output.
+    Prompt template for screening one or more stocks with formatted table output.
 
     Args:
-        ticker: Stock ticker symbol (e.g. AAPL, MSFT).
+        ticker: One or more stock ticker symbols, comma-separated
+                (e.g. AAPL or AAPL,MSFT,GOOG).
         stock_type: Comma-separated stock types: div, growth, value.
 
     Returns a prompt string instructing the LLM to call the stock_screener
-    tool and render the results matching the CLI output format.
+    tool for each ticker and render per-ticker results matching the CLI
+    output format.
     """
     ...
 
@@ -756,7 +758,7 @@ Design decisions for `mcp_server.py`:
 - No Rich console, no Pandas DataFrames, no styled output — all return values are plain dicts/lists
 - `mcp.run()` uses the default stdio transport, suitable for local MCP server registration
 - Existing classes are instantiated fresh per tool call (stateless) — `FinvizScraper`, `HtmlParser`, `Scorer`, `RatioConfigResolver`, `IndustryAverageProvider`, `IndustryAverageCache` are all reused as-is
-- `screen_stock` prompt mirrors the CLI output format: banner header with ticker/price/types first, then per-type score label and ratio table, ending with cumulative Investment Score — this guides the LLM to present results consistently with the terminal experience
+- `screen_stock` prompt supports single and multi-ticker input via comma-separated `ticker` parameter (e.g., `"AAPL"` or `"AAPL,MSFT,GOOG"`). For a single ticker, it instructs the LLM to call `stock_screener` once. For multiple tickers, it instructs the LLM to call `stock_screener` once per ticker (in parallel) and render each ticker's results separately, separated by horizontal rules (`---`). The prompt mirrors the CLI output format: banner header with ticker/price/types first, then per-type score label and ratio table, ending with cumulative Investment Score per ticker
 
 Return structure for `stock_screener` tool:
 ```python

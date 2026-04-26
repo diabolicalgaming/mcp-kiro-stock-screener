@@ -249,28 +249,60 @@ def get_ratio_definitions(stock_type: str) -> dict:
 @mcp.prompt
 def screen_stock(ticker: str, stock_type: str) -> str:
     """
-    Prompt template for screening a stock with formatted table output.
+    Prompt template for screening one or more stocks with formatted table output.
 
     Args:
-        ticker: Stock ticker symbol (e.g. AAPL, MSFT).
+        ticker: One or more stock ticker symbols, comma-separated
+                (e.g. AAPL or AAPL,MSFT,GOOG).
         stock_type: Comma-separated stock types: div, growth, value.
 
     Returns a prompt string instructing the LLM to call the stock_screener
-    tool and render the results matching the CLI output format.
+    tool for each ticker and render per-ticker results matching the CLI
+    output format.
     """
+    tickers: list[str] = [t.strip().upper() for t in ticker.split(",") if t.strip()]
+
+    if len(tickers) == 1:
+        single: str = tickers[0]
+        return (
+            f"Screen the stock {single} for type(s): {stock_type}.\n\n"
+            f"Call the stock_screener tool with ticker='{single}' and "
+            f"stock_type='{stock_type}'.\n\n"
+            f"Render the results in this exact order:\n"
+            f"1. A banner header showing: {single}  $<price>  "
+            f"(<stock_types>) where stock_types are comma-separated.\n"
+            f"2. For each stock type, show:\n"
+            f"   - A label line: <stock_type>: <score> / <max_score>\n"
+            f"   - A markdown table with columns: Ratio, Optimal Value, "
+            f"Industry Average, Real-Time Value, Importance\n"
+            f"3. End with: Investment Score: <total_score> / <total_max> "
+            f"(<percentage>%)\n"
+        )
+
+    ticker_list: str = ", ".join(tickers)
+    tool_calls: str = "\n".join(
+        f"   - stock_screener(ticker='{t}', stock_type='{stock_type}')"
+        for t in tickers
+    )
+
     return (
-        f"Screen the stock {ticker} for type(s): {stock_type}.\n\n"
-        f"Call the stock_screener tool with ticker='{ticker}' and "
-        f"stock_type='{stock_type}'.\n\n"
-        f"Render the results in this exact order:\n"
-        f"1. A banner header showing: {ticker}  $<price>  "
+        f"Screen the following stocks for type(s): {stock_type}.\n"
+        f"Tickers: {ticker_list}\n\n"
+        f"Call the stock_screener tool once for EACH ticker "
+        f"(all calls can be made in parallel):\n"
+        f"{tool_calls}\n\n"
+        f"Then render the results for EACH ticker separately, "
+        f"one after another, in this exact order per ticker:\n"
+        f"1. A banner header showing: <TICKER>  $<price>  "
         f"(<stock_types>) where stock_types are comma-separated.\n"
-        f"2. For each stock type, show:\n"
+        f"2. For each stock type returned, show:\n"
         f"   - A label line: <stock_type>: <score> / <max_score>\n"
         f"   - A markdown table with columns: Ratio, Optimal Value, "
         f"Industry Average, Real-Time Value, Importance\n"
-        f"3. End with: Investment Score: <total_score> / <total_max> "
-        f"(<percentage>%)\n"
+        f"3. End each ticker section with: Investment Score: "
+        f"<total_score> / <total_max> (<percentage>%)\n\n"
+        f"Repeat steps 1-3 for every ticker. Separate each ticker's "
+        f"output with a horizontal rule (---).\n"
     )
 
 
