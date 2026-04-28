@@ -431,6 +431,18 @@ value: 2 / 10
 15. WHEN a single ticker is provided to the `screen_stock` prompt, THE prompt SHALL instruct the LLM to call the `stock_screener` tool once and render a single set of results.
 16. WHEN multiple comma-separated tickers are provided to the `screen_stock` prompt, THE prompt SHALL instruct the LLM to call the `stock_screener` tool once per ticker and render each ticker's results separately, one after another, separated by horizontal rules.
 
+### Requirement 25: Cache File Locking for Concurrent Access Safety
+
+**User Story:** As a user, I want the cache file to be safe from data loss when multiple stock screener processes run in parallel, so that industry-average data for all tickers and stock types is persisted correctly.
+
+#### Acceptance Criteria
+
+1. WHEN the IndustryAverageCache reads from or writes to the cache file, THE IndustryAverageCache SHALL acquire a file-level lock using the `filelock` package (`FileLock`) to prevent data loss from concurrent read-modify-write operations.
+2. THE IndustryAverageCache SHALL acquire an exclusive lock before reading the cache file and release the lock only after writing the updated data back, ensuring that the entire read-modify-write cycle is atomic.
+3. THE IndustryAverageCache SHALL use a separate lock file (e.g., `cache.json.lock`) for locking to avoid corrupting the cache data file itself.
+4. IF the lock cannot be acquired within 10 seconds, THEN THE IndustryAverageCache SHALL proceed with the cache operation without locking and log a warning to the console rather than crashing.
+5. THE file locking mechanism SHALL use the `filelock` package which provides cross-platform file locking compatible with macOS, Linux, and Windows.
+
 #### Example Output
 
 **`stock_screener` tool** — Input passed to the MCP server:

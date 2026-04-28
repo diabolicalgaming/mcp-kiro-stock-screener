@@ -405,3 +405,26 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Ensure `screen_stock` prompt handles multi-ticker input (e.g., `"AAPL,MSFT,GOOG"`) with per-ticker tool call instructions and horizontal rule separators
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
+
+- [ ] 33. Add cross-platform file locking to IndustryAverageCache
+  - [ ] 33.1 Install the `filelock` package
+    - Run `pip install filelock` in the project's pyenv environment
+    - Verify the package is importable: `python -c "from filelock import FileLock, Timeout"`
+    - _Requirements: 25.5_
+  - [ ] 33.2 Update `stock_screener/cache.py` to use `filelock.FileLock` for concurrent access safety
+    - Add `from filelock import FileLock` and `from filelock import Timeout` imports
+    - Add class constants `_LOCK_FILE: str = "cache.json.lock"` and `_LOCK_TIMEOUT_SECONDS: int = 10`
+    - In `__init__`, compute `self._lock_path: Path = self._cache_path.parent / self._LOCK_FILE` and create `self._lock: FileLock = FileLock(str(self._lock_path), timeout=self._LOCK_TIMEOUT_SECONDS)`
+    - Update `get()` to wrap the entire read operation inside `with self._lock:` context manager
+    - Update `put()` to wrap the entire read-modify-write cycle inside `with self._lock:` context manager
+    - Add `except Timeout:` handler to both `get()` and `put()` that logs a warning via Rich console and falls back to unlocked operation
+    - Remove any existing raw file I/O locking code if present (e.g., `fcntl`, `os.open` for lock files)
+    - _Requirements: 25.1, 25.2, 25.3, 25.4, 25.5_
+
+- [ ] 34. Checkpoint - Verify file locking works for concurrent cache access
+  - Ensure `stock_screener/cache.py` imports `filelock` correctly and is syntactically valid
+  - Ensure `~/.stock_screener/cache.json.lock` is created when the cache is accessed
+  - Ensure that running multiple stock screener MCP tool calls in parallel (e.g., 6 tickers with `growth,value`) results in all stock types being correctly persisted in `cache.json` for every ticker
+  - Ensure the lock timeout fallback works: if the lock cannot be acquired within 10 seconds, the operation proceeds with a warning rather than crashing
+  - Run mypy and pylint to verify no type or lint errors
+  - Ask the user if questions arise.

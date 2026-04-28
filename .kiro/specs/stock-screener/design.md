@@ -317,9 +317,9 @@ Design decisions for `IndustryAverageProvider`:
 - Catches `openai.APIStatusError` and all other exceptions as a fallback, returning `"N/A"` for every ratio
 - Parses the JSON response and fills in `"N/A"` for any ratio name missing from the response dict
 
-### 5.5. `stock_screener/cache.py` — IndustryAverageCache class (NEW)
+### 5.5. `stock_screener/cache.py` — IndustryAverageCache class (UPDATED for file locking)
 
-Persists industry-average values to a local JSON file for consistent results across runs.
+Persists industry-average values to a local JSON file for consistent results across runs. Updated to use cross-platform file-level locking via the `filelock` package to prevent data loss when multiple parallel processes perform concurrent read-modify-write operations on the shared cache file.
 
 ```python
 from __future__ import annotations
@@ -328,12 +328,19 @@ import json
 import datetime
 from pathlib import Path
 
+from filelock import FileLock
+from filelock import Timeout
+
 from rich.console import Console
 
 
 class IndustryAverageCache:
     """
     Persists industry-average values to a local JSON file.
+
+    Uses cross-platform file locking (filelock.FileLock) to ensure atomic
+    read-modify-write operations when multiple processes access
+    the cache concurrently. Works on macOS, Linux, and Windows.
 
     Cache structure:
     {
@@ -346,17 +353,123 @@ class IndustryAverageCache:
     """
 
     DEFAULT_TTL_DAYS: int = 7
+    _CACHE_DIR: str = ".stock_screener"
+    _CACHE_FILE: str = "cache.json"
+    _LOCK_FILE: str = "cache.json.lock"
+    _LOCK_TIMEOUT_SECONDS: int = 10
 
     def __init__(self, ttl_days: int = DEFAULT_TTL_DAYS) -> None:
+        self._ttl_days: int = ttl_days
+        self._cache_path: Path = self._resolve_cache_path()
+        self._lock_path: Path = self._cache_path.parent / self._LOCK_FILE
+        self._lock: FileLock = FileLock(str(self._lock_path), timeout=self._LOCK_TIMEOUT_SECONDS)
+        self._console: Console = Console()
+
+    def _resolve_cache_path(self) -> Path:
+        """Return the full path to the cache JSON file, creating dirs if needed."""
+        ...
+
+    def _load(self) -> dict[str, dict[str, dict[str, object]]]:
+        """Load the entire cache file. Returns empty dict on any failure."""
+        ...
+
+    def _save(self, data: dict[str, dict[str, dict[str, object]]]) -> None:
+        """Write the full cache dict to disk."""
+        ...
+
+    def _is_expired(self, timestamp_str: str) -> bool:
+        """Return True if the timestamp is older than the configured TTL."""
         ...
 
     def get(self, ticker: str, stock_type: str) -> dict[str, str] | None:
-        """Return cached averages or None on miss/expiry."""
-        ...
+        """
+        Return cached averages for ticker/stock_type, or None on miss/expiry.
 
-    def put(self, ticker: str, stock_type: str, averages: dict[str, str]) -> None:
-        """Store averages with current timestamp."""
-        ...
+        Acquires an exclusive file lock before reading to ensure a consistent
+        snapshot of the cache file. The lock is released after reading.
+        If the lock cannot be acquired within the timeout, reads without locking.
+        """
+        try:
+            with self._lock:
+                data: dict[str, dict[str, dict[str, object]]] = self._load()
+                ticker_key: str = ticker.upper()
+                ticker_entry = data.get(ticker_key)
+                if ticker_entry is None:
+                    return None
+                type_entry = ticker_entry.get(stock_type)
+                if type_entry is None:
+                    return None
+                timestamp = type_entry.get("timestamp")
+                if not isinstance(timestamp, str) or self._is_expired(timestamp):
+                    return None
+                averages = type_entry.get("averages")
+                if not isinstance(averages, dict):
+                    return None
+                return {str(k): str(v) for k, v in averages.items()}
+        except Timeout:
+            self._console.print(
+                "[yellow]Warning: Could not acquire cache lock "
+                f"within {self._LOCK_TIMEOUT_SECONDS}s — "
+                "proceeding without lock[/yellow]"
+            )
+            # Fall back to unlocked read
+            data = self._load()
+            ticker_key = ticker.upper()
+            ticker_entry = data.get(ticker_key)
+            if ticker_entry is None:
+                return None
+            type_entry = ticker_entry.get(stock_type)
+            if type_entry is None:
+                return None
+            timestamp = type_entry.get("timestamp")
+            if not isinstance(timestamp, str) or self._is_expired(timestamp):
+                return None
+            averages = type_entry.get("averages")
+            if not isinstance(averages, dict):
+                return None
+            return {str(k): str(v) for k, v in averages.items()}
+
+    def put(
+        self,
+        ticker: str,
+        stock_type: str,
+        averages: dict[str, str],
+    ) -> None:
+        """
+        Store averages for ticker/stock_type with the current timestamp.
+
+        Acquires an exclusive file lock, reads the current cache state,
+        merges the new entry, and writes back — ensuring the entire
+        read-modify-write cycle is atomic. The lock is released after
+        writing. If the lock cannot be acquired, proceeds without locking.
+        """
+        try:
+            with self._lock:
+                data: dict[str, dict[str, dict[str, object]]] = self._load()
+                ticker_key: str = ticker.upper()
+                if ticker_key not in data:
+                    data[ticker_key] = {}
+                data[ticker_key][stock_type] = {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "averages": averages,
+                }
+                self._save(data)
+        except Timeout:
+            self._console.print(
+                "[yellow]Warning: Could not acquire cache lock "
+                f"within {self._LOCK_TIMEOUT_SECONDS}s — "
+                "proceeding without lock[/yellow]"
+            )
+            # Fall back to unlocked write
+            data = self._load()
+            ticker_key = ticker.upper()
+            if ticker_key not in data:
+                data[ticker_key] = {}
+            data[ticker_key][stock_type] = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "averages": averages,
+            }
+            self._save(data)
 ```
 
 Design decisions for `IndustryAverageCache`:
@@ -366,6 +479,13 @@ Design decisions for `IndustryAverageCache`:
 - Each entry stores an ISO 8601 timestamp and the averages dict
 - All file I/O wrapped in try-except — cache failures log warnings but never crash the app
 - Normalized key matching uses `ticker.upper()` for consistency
+- **File locking** uses the `filelock` package (`FileLock`) with a separate lock file (`cache.json.lock`) to prevent data corruption from concurrent read-modify-write operations (Requirement 25)
+- `filelock` is cross-platform — uses `fcntl.flock` on macOS/Linux and `msvcrt.locking`/`LockFileEx` on Windows under the hood
+- The lock file is separate from the cache data file to avoid corrupting the JSON content if a lock operation fails mid-write
+- `FileLock` is initialized once in `__init__` with a 10-second timeout and reused across all `get()` and `put()` calls
+- Both `get()` and `put()` use the `with self._lock:` context manager for clean acquire/release semantics
+- If the lock cannot be acquired within the timeout, a `filelock.Timeout` exception is caught, a warning is logged, and the operation falls back to unlocked access — the application never crashes due to lock contention
+- The `filelock` package must be installed via `pip install filelock`
 
 ### 6. `stock_screener/renderer.py` — TableRenderer class (UPDATED for scoring display)
 
@@ -1011,6 +1131,8 @@ All error-prone operations use try-except blocks as required by coding standards
 | Cache file unreadable (corrupt JSON, permission error) | `IndustryAverageCache` | Log warning to console, treat as cache miss, continue without caching |
 | Cache file unwritable (permission error, disk full) | `IndustryAverageCache` | Log warning to console, continue without persisting — app does not crash |
 | Cache directory cannot be created | `IndustryAverageCache` | Log warning to console, continue without caching |
+| Cache lock file cannot be opened or created | `IndustryAverageCache` (`filelock.FileLock`) | Log warning to console, proceed with cache operation without locking — app does not crash |
+| Cache lock cannot be acquired within 10-second timeout | `IndustryAverageCache` (`filelock.Timeout`) | Log warning to console, proceed with cache operation without locking — app does not crash |
 | Scorer receives unparseable real-time or industry average value | `Scorer._parse_numeric` | Extracts last numeric token via regex; returns `None` if no tokens found or unparseable — ratio does not contribute to score (no crash) |
 | Scorer receives "N/A" for real-time or industry average | `Scorer.score_ratios` | Ratio is skipped — no point scored, but still counted in max_score |
 | MCP tool receives invalid stock type | `mcp_server.stock_screener` / `mcp_server.get_ratio_definitions` | Return `{"error": "..."}` dict with descriptive message — no exception raised |
@@ -1079,6 +1201,12 @@ The max_score SHALL always equal `len(ratio_set)`.
 - `red` if percentage < 50
 
 **Validates: Requirements 19 (Investment Score banner color scheme)**
+
+### Property 7: Cache file locking ensures atomic read-modify-write
+
+*For any* number of concurrent `IndustryAverageCache.put()` calls writing different ticker/stock_type entries simultaneously, the resulting cache file SHALL contain all entries from all calls — no entry SHALL be silently lost due to a concurrent overwrite. The `put()` method acquires an exclusive file lock via `filelock.FileLock` before reading the cache, merges the new entry, and writes back while holding the lock, ensuring the read-modify-write cycle is atomic. The locking mechanism is cross-platform, working on macOS, Linux, and Windows.
+
+**Validates: Requirement 25.1, 25.2**
 
 ## Testing Strategy
 
