@@ -6,12 +6,19 @@ import json
 import datetime
 from pathlib import Path
 
+from filelock import FileLock
+from filelock import Timeout
+
 from rich.console import Console
 
 
 class IndustryAverageCache:
     """
     Persists industry-average values to a local JSON file.
+
+    Uses cross-platform file locking (filelock.FileLock) to ensure atomic
+    read-modify-write operations when multiple processes access
+    the cache concurrently. Works on macOS, Linux, and Windows.
 
     Cache structure:
     {
@@ -26,10 +33,16 @@ class IndustryAverageCache:
     DEFAULT_TTL_DAYS: int = 7
     _CACHE_DIR: str = ".stock_screener"
     _CACHE_FILE: str = "cache.json"
+    _LOCK_FILE: str = "cache.json.lock"
+    _LOCK_TIMEOUT_SECONDS: int = 10
 
     def __init__(self, ttl_days: int = DEFAULT_TTL_DAYS) -> None:
         self._ttl_days: int = ttl_days
         self._cache_path: Path = self._resolve_cache_path()
+        self._lock_path: Path = self._cache_path.parent / self._LOCK_FILE
+        self._lock: FileLock = FileLock(
+            str(self._lock_path), timeout=self._LOCK_TIMEOUT_SECONDS
+        )
         self._console: Console = Console()
 
     def _resolve_cache_path(self) -> Path:
@@ -80,15 +93,13 @@ class IndustryAverageCache:
         except (ValueError, TypeError):
             return True
 
-    def get(
+    def _read_entry(
         self,
+        data: dict[str, dict[str, dict[str, object]]],
         ticker: str,
         stock_type: str,
     ) -> dict[str, str] | None:
-        """
-        Return cached averages for ticker/stock_type, or None on miss/expiry.
-        """
-        data: dict[str, dict[str, dict[str, object]]] = self._load()
+        """Extract a cached entry from loaded data, or None on miss/expiry."""
         ticker_key: str = ticker.upper()
         ticker_entry: dict[str, dict[str, object]] | None = data.get(
             ticker_key
@@ -106,19 +117,67 @@ class IndustryAverageCache:
             return None
         return {str(k): str(v) for k, v in averages.items()}
 
+    def get(
+        self,
+        ticker: str,
+        stock_type: str,
+    ) -> dict[str, str] | None:
+        """
+        Return cached averages for ticker/stock_type, or None on miss/expiry.
+
+        Acquires an exclusive file lock before reading to ensure a consistent
+        snapshot of the cache file. Falls back to unlocked read on timeout.
+        """
+        try:
+            with self._lock:
+                data: dict[str, dict[str, dict[str, object]]] = self._load()
+                return self._read_entry(data, ticker, stock_type)
+        except Timeout:
+            self._console.print(
+                "[yellow]Warning: Could not acquire cache lock "
+                f"within {self._LOCK_TIMEOUT_SECONDS}s — "
+                "proceeding without lock[/yellow]"
+            )
+            data = self._load()
+            return self._read_entry(data, ticker, stock_type)
+
     def put(
         self,
         ticker: str,
         stock_type: str,
         averages: dict[str, str],
     ) -> None:
-        """Store averages for ticker/stock_type with the current timestamp."""
-        data: dict[str, dict[str, dict[str, object]]] = self._load()
-        ticker_key: str = ticker.upper()
-        if ticker_key not in data:
-            data[ticker_key] = {}
-        data[ticker_key][stock_type] = {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "averages": averages,
-        }
-        self._save(data)
+        """
+        Store averages for ticker/stock_type with the current timestamp.
+
+        Acquires an exclusive file lock, reads the current cache state,
+        merges the new entry, and writes back — ensuring the entire
+        read-modify-write cycle is atomic. Falls back to unlocked
+        write on timeout.
+        """
+        try:
+            with self._lock:
+                data: dict[str, dict[str, dict[str, object]]] = self._load()
+                ticker_key: str = ticker.upper()
+                if ticker_key not in data:
+                    data[ticker_key] = {}
+                data[ticker_key][stock_type] = {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "averages": averages,
+                }
+                self._save(data)
+        except Timeout:
+            self._console.print(
+                "[yellow]Warning: Could not acquire cache lock "
+                f"within {self._LOCK_TIMEOUT_SECONDS}s — "
+                "proceeding without lock[/yellow]"
+            )
+            data = self._load()
+            ticker_key = ticker.upper()
+            if ticker_key not in data:
+                data[ticker_key] = {}
+            data[ticker_key][stock_type] = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "averages": averages,
+            }
+            self._save(data)
