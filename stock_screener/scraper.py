@@ -62,7 +62,7 @@ class FinvizScraper:  # pylint: disable=too-few-public-methods
         """
         driver: webdriver.Chrome | None = None
         try:
-            driver = webdriver.Chrome(
+            driver = webdriver.Chrome(  # pylint: disable=not-callable
                 service=self._service,
                 options=self._options,
             )

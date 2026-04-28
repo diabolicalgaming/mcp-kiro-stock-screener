@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 import datetime
+from typing import TYPE_CHECKING
 from collections.abc import Mapping
 
 import openai
@@ -13,6 +14,9 @@ from openai import OpenAI
 from rich.console import Console
 
 from stock_screener.ratios import RatioInfo
+
+if TYPE_CHECKING:
+    from stock_screener.cache import IndustryAverageCache
 
 
 class IndustryAverageProvider:
@@ -197,3 +201,43 @@ class IndustryAverageProvider:
                 f"[red]Error: Unexpected error fetching industry averages — {exc}[/red]"
             )
             return self._default_averages(ratio_set)
+
+
+def resolve_industry_averages(
+    provider: IndustryAverageProvider,
+    cache: IndustryAverageCache,
+    ticker: str,
+    stock_type: str,
+    ratio_set: list[RatioInfo],
+    sector: str,
+    industry: str,
+    use_cache: bool,
+    refresh: bool,
+) -> dict[str, str]:
+    """Resolve industry averages using cache-then-fetch strategy.
+
+    Checks the cache first (unless disabled or refreshing), falls back
+    to the OpenAI API on miss, and writes successful results to cache.
+    Returns N/A fallback values on any provider failure.
+
+    This function is shared by both the CLI app and the MCP server
+    to avoid duplicating the cache-check-then-fetch logic.
+    """
+    industry_averages: dict[str, str] | None = None
+
+    if use_cache and not refresh:
+        industry_averages = cache.get(ticker, stock_type)
+
+    if industry_averages is None:
+        try:
+            industry_averages = provider.fetch_averages(
+                ticker, stock_type, ratio_set, sector, industry
+            )
+            if use_cache:
+                cache.put(ticker, stock_type, industry_averages)
+        except (
+            OSError, ValueError, TypeError, KeyError, RuntimeError,
+        ):
+            industry_averages = {r.name: "N/A" for r in ratio_set}
+
+    return industry_averages

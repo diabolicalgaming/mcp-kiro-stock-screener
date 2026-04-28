@@ -9,6 +9,7 @@ from rich.console import Console
 from stock_screener.cache import IndustryAverageCache
 from stock_screener.cli import ArgumentParser
 from stock_screener.industry import IndustryAverageProvider
+from stock_screener.industry import resolve_industry_averages
 from stock_screener.parser import HtmlParser
 from stock_screener.ratios import RatioInfo
 from stock_screener.ratios import RatioConfigResolver
@@ -126,30 +127,19 @@ class StockScreenerApp:  # pylint: disable=too-few-public-methods
 
         values: dict[str, str] = parser.parse_ratios(ratio_set)
 
-        industry_averages: dict[str, str] | None = None
-
-        if use_cache and not refresh:
-            industry_averages = cache.get(ticker, stock_type)
-            if industry_averages is not None:
-                self._console.print(
-                    "[dim]Using cached industry averages.[/dim]"
-                )
-
-        if industry_averages is None:
-            try:
-                industry_averages = provider.fetch_averages(
-                    ticker, stock_type, ratio_set, sector, industry
-                )
-                if use_cache:
-                    cache.put(ticker, stock_type, industry_averages)
-            except (
-                OSError, ValueError, TypeError, KeyError, RuntimeError,
-            ) as exc:
-                self._console.print(
-                    f"[yellow]Warning: Could not fetch industry "
-                    f"averages for {stock_type} — {exc}[/yellow]"
-                )
-                industry_averages = {r.name: "N/A" for r in ratio_set}
+        has_cache_hit: bool = (
+            use_cache
+            and not refresh
+            and cache.get(ticker, stock_type) is not None
+        )
+        industry_averages: dict[str, str] = resolve_industry_averages(
+            provider, cache, ticker, stock_type, ratio_set,
+            sector, industry, use_cache, refresh,
+        )
+        if has_cache_hit:
+            self._console.print(
+                "[dim]Using cached industry averages.[/dim]"
+            )
 
         dataframe: pd.DataFrame = self._renderer.build_dataframe(
             ratio_set, values, industry_averages
