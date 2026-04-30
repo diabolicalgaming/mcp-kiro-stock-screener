@@ -67,13 +67,15 @@ python stock_screener/main.py <TICKER> <STOCK_TYPE> [OPTIONS]
 
 | Argument       | Required | Description                                                        |
 |----------------|----------|--------------------------------------------------------------------|
-| `ticker`       | Yes      | Stock ticker symbol (e.g. `AAPL`, `MSFT`)                         |
+| `ticker`       | Yes      | Single stock ticker symbol (e.g. `AAPL`, `MSFT`, `BRK-B`)         |
 | `stock_type`   | Yes      | One or more types: `div`, `growth`, `value` (comma-separated)      |
 | `--api-key`    | No       | OpenAI API key (falls back to `OPENAI_API_KEY` env var)            |
 | `--no-cache`   | No       | Disable cache entirely — always call the API                       |
 | `--refresh`    | No       | Ignore cached data but write fresh results to cache                |
 
 > `--no-cache` and `--refresh` are mutually exclusive.
+
+> The CLI accepts a single ticker only. Tickers must be alphabetic, optionally with a single hyphen for share classes (e.g., `BRK-B`). For screening multiple tickers, use the MCP server's `screen_stock` prompt which supports comma-separated tickers.
 
 #### Examples
 
@@ -248,7 +250,7 @@ Returns the list of ratios with their name, optimal value, importance, format ty
 
 #### Available Prompts
 
-**`screen_stock`** — Prompt template for screening one or more stocks with formatted table output.
+**`screen_stock`** — Prompt template for screening one or more stocks with formatted table output. Unlike the CLI (which accepts a single ticker), this prompt supports multiple comma-separated tickers for batch screening.
 
 | Parameter    | Type   | Description                                                    |
 |--------------|--------|----------------------------------------------------------------|
