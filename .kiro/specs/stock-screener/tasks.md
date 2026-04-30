@@ -53,7 +53,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Return `tuple[str, str]` of `(ticker_uppercase, stock_type)`
     - Display usage on missing args, error on invalid stock type, exit code 1 on failure
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
-  - [ ] 3.2 Add ticker validation to `ArgumentParser` in `stock_screener/cli.py`
+  - [x] 3.2 Add ticker validation to `ArgumentParser` in `stock_screener/cli.py`
     - Add `import re` to the module imports
     - Add class-level `TICKER_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z]+(-[a-zA-Z]+)?$")` compiled regex
     - Add `_validate_ticker(value: str) -> str` static method that performs two-stage validation:
