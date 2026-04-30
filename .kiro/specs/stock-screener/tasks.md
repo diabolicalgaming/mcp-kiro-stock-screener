@@ -53,6 +53,17 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Return `tuple[str, str]` of `(ticker_uppercase, stock_type)`
     - Display usage on missing args, error on invalid stock type, exit code 1 on failure
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
+  - [ ] 3.2 Add ticker validation to `ArgumentParser` in `stock_screener/cli.py`
+    - Add `import re` to the module imports
+    - Add class-level `TICKER_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z]+(-[a-zA-Z]+)?$")` compiled regex
+    - Add `_validate_ticker(value: str) -> str` static method that performs two-stage validation:
+      1. **Comma check**: if `","` is in the value, raise `argparse.ArgumentTypeError` with message: `"Only one ticker is allowed. Use the MCP server for multiple tickers."`
+      2. **Format check**: if the value does not match `TICKER_PATTERN`, raise `argparse.ArgumentTypeError` with message: `"Invalid ticker '{value}'. Ticker must be alphabetic, optionally with a single hyphen for share classes (e.g., BRK-B)."`
+      3. Return `value.strip().upper()` on success
+    - Update the `ticker` positional argument in `_build_parser()` to use `type=self._validate_ticker` instead of `type=str`
+    - Update the `ticker` help text to: `"Single stock ticker symbol (e.g. AAPL, MSFT, BRK-B)."`
+    - Add a belt-and-suspenders comma check in `parse()` after `args.ticker` assignment as a safety net
+    - _Requirements: 1.5, 1.6, 1.7, 1.8_
 
 - [x] 4. Implement web scraping with Selenium
   - [x] 4.1 Create `stock_screener/scraper.py` with `ScrapeError` exception and `FinvizScraper` class

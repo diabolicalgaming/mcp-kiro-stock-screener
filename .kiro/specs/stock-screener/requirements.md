@@ -40,6 +40,10 @@ A Python command-line stock screener application that retrieves and displays fin
 2. WHEN the user provides fewer than two arguments, THE Screener SHALL display a usage message indicating the required arguments and exit with a non-zero status code.
 3. WHEN the user provides an unrecognized Stock_Type, THE Screener SHALL display an error message listing the valid stock types ("div", "growth", "value") and exit with a non-zero status code.
 4. THE Screener SHALL accept Stock_Ticker values in a case-insensitive manner and normalize the ticker to uppercase before use.
+5. WHEN the user provides a ticker containing commas (e.g., "NKE,DECK"), THE ArgumentParser SHALL display an error message stating that only one ticker is allowed and suggesting the MCP server for multiple tickers, and exit with a non-zero status code.
+6. WHEN the user provides a ticker that does not match the valid ticker format (letters only, with an optional single hyphen for share classes, e.g., "BRK-B"), THE ArgumentParser SHALL display an error message indicating the invalid ticker format and exit with a non-zero status code.
+7. THE ArgumentParser SHALL enforce ticker validation at the argparse `type` level via a custom validation function, so that invalid tickers are rejected before any further argument processing occurs.
+8. THE valid ticker format SHALL be defined by the regex pattern `^[a-zA-Z]+(-[a-zA-Z]+)?$`, which accepts alphabetic tickers (e.g., "AAPL", "NKE") and share-class tickers with a single hyphen (e.g., "BRK-B", "BF-B"), while rejecting dots, numbers, spaces, and other special characters.
 
 ### Requirement 2: Stock Type Ratio Mapping
 

@@ -63,13 +63,14 @@ The pipeline is: parse CLI args (ticker, stock_types list, `--api-key`, `--no-ca
 
 ## Components and Interfaces
 
-### 1. `stock_screener/cli.py` — ArgumentParser class (UPDATED for multi-stock-type support)
+### 1. `stock_screener/cli.py` — ArgumentParser class (UPDATED for multi-stock-type support and ticker validation)
 
-Encapsulates command-line argument parsing using `argparse`. Updated to parse comma-separated stock types, deduplicate preserving order, and validate each type individually.
+Encapsulates command-line argument parsing using `argparse`. Updated to parse comma-separated stock types, deduplicate preserving order, validate each type individually, and enforce single-ticker input with format validation via a custom argparse `type` function.
 
 ```python
 from __future__ import annotations
 
+import re
 import os
 import sys
 import argparse
@@ -79,6 +80,7 @@ class ArgumentParser:
     """Parses and validates CLI arguments for the stock screener."""
 
     VALID_STOCK_TYPES: list[str] = ["div", "growth", "value"]
+    TICKER_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z]+(-[a-zA-Z]+)?$")
 
     def __init__(self, argv: list[str] | None = None) -> None:
         self._argv: list[str] | None = argv
@@ -86,6 +88,22 @@ class ArgumentParser:
 
     def _build_parser(self) -> argparse.ArgumentParser:
         """Build the argparse parser with ticker, stock_type, and --api-key arguments."""
+        ...
+
+    @staticmethod
+    def _validate_ticker(value: str) -> str:
+        """Validate and normalize a single ticker symbol.
+
+        Enforces two checks in order:
+        1. Comma check — rejects multiple comma-separated tickers with a
+           specific message directing the user to the MCP server.
+        2. Format check — validates against TICKER_PATTERN regex, accepting
+           alphabetic tickers (e.g., AAPL) and share-class tickers with a
+           single hyphen (e.g., BRK-B).
+
+        Returns the uppercase ticker on success.
+        Raises argparse.ArgumentTypeError on failure.
+        """
         ...
 
     def _parse_stock_types(self, raw: str) -> list[str]:
@@ -105,10 +123,20 @@ class ArgumentParser:
         stock_types is a list[str] — always at least one element.
         Reads --api-key from CLI arg first, falls back to OPENAI_API_KEY env var.
         Prints error to stderr and raises SystemExit if no API key is found.
+
+        The ticker is already validated and uppercased by _validate_ticker
+        at the argparse type level. An additional comma check in parse()
+        serves as a belt-and-suspenders safety net.
         """
         ...
 ```
 
+- The `ticker` positional argument uses `type=self._validate_ticker` to enforce validation at the argparse level
+- New static method `_validate_ticker(value: str) -> str` performs two-stage validation:
+  1. **Comma check**: if the value contains a comma, raises `argparse.ArgumentTypeError` with a message directing the user to the MCP server for multi-ticker screening
+  2. **Format check**: validates against `TICKER_PATTERN` regex (`^[a-zA-Z]+(-[a-zA-Z]+)?$`), accepting alphabetic tickers (e.g., `AAPL`, `NKE`) and share-class tickers with a single hyphen (e.g., `BRK-B`, `BF-B`), while rejecting dots, numbers, spaces, and other special characters
+  3. Returns the uppercase ticker on success
+- The `parse()` method includes a redundant comma check on the ticker as a safety net, in case the argparse type constraint is bypassed in a future refactor
 - The `stock_type` positional argument now accepts a comma-separated string (e.g., `growth,value,div`)
 - New private method `_parse_stock_types(raw: str) -> list[str]` handles:
   1. Splitting on commas: `raw.split(",")`
@@ -118,8 +146,13 @@ class ArgumentParser:
 - Return type changes from `tuple[str, str, str, bool, bool]` to `tuple[str, list[str], str, bool, bool]`
 - A single stock type without a comma (e.g., `growth`) produces a one-element list `["growth"]`
 - The help text for the `stock_type` argument is updated to indicate comma-separated values are accepted
+- The help text for the `ticker` argument is updated to indicate single ticker only with share-class examples
 
 Design decisions:
+- `_validate_ticker` is a `@staticmethod` so it can be passed as the `type` parameter to `argparse.add_argument`
+- Two-stage validation (comma check first, then regex) provides specific error messages: "only one ticker allowed" for commas vs "invalid ticker format" for other invalid characters
+- `TICKER_PATTERN` is a class-level compiled regex for reuse and clarity
+- The regex `^[a-zA-Z]+(-[a-zA-Z]+)?$` allows `BRK-B` style share classes used by Finviz while rejecting dots (used by other platforms like Yahoo Finance for the same purpose)
 - `_parse_stock_types` is a separate method (not inline in `parse()`) for clarity and testability
 - `dict.fromkeys()` is used for deduplication because it preserves insertion order in Python 3.7+ and is idiomatic
 - Validation iterates the deduplicated list and exits on the first invalid type found, printing the specific invalid value in the error message
@@ -1113,6 +1146,8 @@ All error-prone operations use try-except blocks as required by coding standards
 | Missing CLI arguments | `ArgumentParser` | Print usage message via argparse, exit code 1 |
 | Invalid stock type | `ArgumentParser` | Print error with valid types listed via argparse, exit code 1 |
 | Invalid stock type in comma-separated list | `ArgumentParser._parse_stock_types` | Print error identifying the invalid type, exit code 1 |
+| Multiple comma-separated tickers | `ArgumentParser._validate_ticker` | Print error stating only one ticker is allowed and suggesting MCP server, exit code 1 |
+| Invalid ticker format (numbers, dots, special chars) | `ArgumentParser._validate_ticker` | Print error indicating invalid ticker format with expected pattern, exit code 1 |
 | Missing API key (no `--api-key` and no `OPENAI_API_KEY` env var) | `ArgumentParser` | Print error to stderr, exit code 1 |
 | Unknown stock type in resolver | `RatioConfigResolver` | Raise `ValueError` with descriptive message |
 | Selenium WebDriver failure | `FinvizScraper` | Raise `ScrapeError`; `StockScreenerApp` prints via Rich, exit code 1 |
@@ -1165,6 +1200,18 @@ A single stock type without a comma produces a one-element list.
 *For any* comma-separated string containing at least one token that is not a member of `VALID_STOCK_TYPES`, `ArgumentParser._parse_stock_types` SHALL exit with code 1 and print an error message identifying the invalid stock type.
 
 **Validates: Requirements 16.3**
+
+### Property 2.5: Single ticker enforcement and format validation
+
+*For any* input string passed as the `ticker` positional argument:
+1. If the string contains a comma, `_validate_ticker` SHALL raise `ArgumentTypeError` with a message stating only one ticker is allowed and suggesting the MCP server.
+2. If the string does not match the pattern `^[a-zA-Z]+(-[a-zA-Z]+)?$`, `_validate_ticker` SHALL raise `ArgumentTypeError` with a message indicating the invalid ticker format.
+3. If the string matches the pattern, `_validate_ticker` SHALL return the uppercase version of the string.
+
+Valid examples: `"AAPL"` → `"AAPL"`, `"nke"` → `"NKE"`, `"brk-b"` → `"BRK-B"`, `"BF-B"` → `"BF-B"`.
+Rejected examples: `"nke,deck"` (comma), `"123"` (numbers), `"nke!"` (special char), `"brk.b"` (dot), `"BRK-"` (trailing hyphen), `"BRK--B"` (double hyphen), `"-B"` (leading hyphen).
+
+**Validates: Requirements 1.5, 1.6, 1.7, 1.8**
 
 ### Property 3: Banner header contains all stock types in order
 
