@@ -79,9 +79,9 @@ class Scorer:
             raw_realtime: str = values.get(ratio.name, "N/A")
             if (
                 ratio.name == "Revenue Growth 3\u20135 Year CAGR"
-                and "/" in raw_realtime
+                and " / " in raw_realtime
             ):
-                raw_realtime = raw_realtime.split("/")[0]
+                raw_realtime = raw_realtime.split(" / ")[0]
             realtime: float | None = self._parse_numeric(raw_realtime)
             industry_avg: float | None = self._parse_numeric(
                 industry_averages.get(ratio.name, "N/A")

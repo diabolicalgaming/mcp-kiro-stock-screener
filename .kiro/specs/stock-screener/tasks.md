@@ -75,8 +75,8 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Ensure WebDriver is properly quit in a finally block
     - _Requirements: 5.1, 5.4, 5.5, 7.4_
 
-- [ ] 5. Implement HTML parsing with BeautifulSoup
-  - [ ] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
+- [x] 5. Implement HTML parsing with BeautifulSoup
+  - [x] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
     - Initialize `BeautifulSoup` with `html.parser` in constructor
     - Implement `parse_ratios(ratio_set: list[RatioInfo]) -> dict[str, str]` to extract ratio values by label
     - Navigate finviz snapshot table where `<td>` cells alternate between label and value
@@ -326,7 +326,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Verify `--no-cache` and `--refresh` flags apply uniformly to all stock types
   - Ask the user if questions arise.
 
-- [ ] 28. Update `stock_screener/scorer.py` — `Scorer` class
+- [x] 28. Update `stock_screener/scorer.py` — `Scorer` class
   - [x] 28.1 Update `_parse_numeric` in `stock_screener/scorer.py` to handle compound finviz values
     - Add `import re` to the module imports
     - Replace the current strip-and-float logic with `re.findall(r"-?[\d.]+", stripped)` to extract all numeric tokens
@@ -343,7 +343,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       (b) the real-time value falls within the optimal value range defined by `RatioInfo.optimal`
     - Reuse the optimal range parsing logic from `TableRenderer._parse_optimal` / `_OptimalRange.is_within`
     - _Requirements: 5.4, 19 (scoring rules)_
-  - [ ] 28.3 Update `score_ratios` in `stock_screener/scorer.py` to split on ` / ` for Revenue Growth 3–5 Year CAGR scoring
+  - [x] 28.3 Update `score_ratios` in `stock_screener/scorer.py` to split on ` / ` for Revenue Growth 3–5 Year CAGR scoring
     - Change the condition from `"/" in raw_realtime` to `" / " in raw_realtime` for the "Revenue Growth 3–5 Year CAGR" special case
     - Split on `" / "` (space-slash-space) and take the first segment (the 3-year CAGR)
     - Pass the first segment to `_parse_numeric()` for scoring

@@ -85,6 +85,15 @@ class HtmlParser:
                 label_text: str = cells[i].get_text(strip=True)
                 if label_text in label_to_name:
                     value_text: str = cells[i + 1].get_text(strip=True)
+                    if label_text == "Sales past 3/5Y":
+                        cagr_match = re.match(
+                            r"(-?[\d.]+%)(-?[\d.]+%)", value_text
+                        )
+                        if cagr_match:
+                            value_text = (
+                                f"{cagr_match.group(1)} / "
+                                f"{cagr_match.group(2)}"
+                            )
                     results[label_to_name[label_text]] = value_text
 
             # Handle calculated ratios (empty finviz_label)
