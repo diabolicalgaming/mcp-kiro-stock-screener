@@ -28,7 +28,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Create `main.py` entry point stub that imports and runs `StockScreenerApp`
     - _Requirements: 1.1_
 
-- [ ] 2. Implement ratio data model and configuration
+- [x] 2. Implement ratio data model and configuration
   - [x] 2.1 Create `stock_screener/ratios.py` with `RatioInfo` dataclass and `RatioConfigResolver` class
     - Define frozen `RatioInfo` dataclass with fields: `name`, `finviz_label`, `optimal`, `importance`, `format_type`
     - `format_type` is a `str` field with valid values `"percentage"` or `"multiple"` — indicates how the ratio's industry average value should be formatted
@@ -482,7 +482,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - The next run will re-fetch fresh industry averages for all stock types with the correct ratio names
     - _Requirements: 13.4_
 
-- [ ] 36. Checkpoint - Verify new value ratio set works end-to-end
+- [x] 36. Checkpoint - Verify new value ratio set works end-to-end
   - Ensure `stock_screener/ratios.py` is syntactically correct and importable with the updated value ratio set
   - Ensure `RatioConfigResolver.get_ratio_set("value")` returns exactly 10 ratios with the new composition
   - Ensure `HtmlParser.parse_ratios()` correctly computes Earnings Yield from P/E for a stock with a valid P/E value

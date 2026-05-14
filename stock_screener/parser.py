@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 from bs4 import Tag
 from bs4 import NavigableString
@@ -11,49 +12,83 @@ from bs4 import BeautifulSoup
 from stock_screener.ratios import RatioInfo
 
 
+_CALCULATIONS: dict[str, Callable[[list[float]], float | None]] = {
+    "inverse_pe_times_100": lambda vals: (
+        (1.0 / vals[0]) * 100.0 if vals[0] > 0 else None
+    ),
+    "ps_div_pfcf_times_100": lambda vals: (
+        (vals[0] / vals[1]) * 100.0 if len(vals) > 1 and vals[1] > 0 else None
+    ),
+}
+
+
 class HtmlParser:
     """Parses finviz HTML to extract ratio values and stock price."""
 
     def __init__(self, html: str) -> None:
         self._soup: BeautifulSoup = BeautifulSoup(html, "html.parser")
 
-    def _compute_fcf_margin(self, cells: list[Tag]) -> str:
+    def _extract_source_values(
+        self,
+        cells: list[Tag],
+        source_labels: list[str],
+    ) -> list[float] | None:
         """
-        Compute FCF Margin = (P/S ÷ P/FCF) × 100.
+        Extract numeric values for the given source labels from the
+        snapshot table cells.
 
-        Returns a formatted percentage string (e.g., "26.82%") or "N/A"
-        if either source value is missing, non-numeric, or P/FCF is zero
-        or negative.
+        Returns a list of floats in the same order as source_labels,
+        or None if any label is missing or non-numeric.
         """
-        ps_value: str | None = None
-        pfcf_value: str | None = None
-
+        label_values: dict[str, str] = {}
         for i in range(0, len(cells) - 1, 2):
             label_text: str = cells[i].get_text(strip=True)
-            if label_text == "P/S":
-                ps_value = cells[i + 1].get_text(strip=True)
-            elif label_text == "P/FCF":
-                pfcf_value = cells[i + 1].get_text(strip=True)
+            if label_text in source_labels:
+                label_values[label_text] = cells[i + 1].get_text(strip=True)
 
-        if ps_value is None or pfcf_value is None:
-            return "N/A"
+        values: list[float] = []
+        for label in source_labels:
+            raw: str | None = label_values.get(label)
+            if raw is None:
+                return None
+            tokens: list[str] = re.findall(r"-?[\d.]+", raw)
+            if not tokens:
+                return None
+            try:
+                values.append(float(tokens[0]))
+            except ValueError:
+                return None
+        return values
 
+    def _compute_calculated_ratio(
+        self,
+        ratio: RatioInfo,
+        cells: list[Tag],
+    ) -> str:
+        """
+        Compute a calculated ratio using the _CALCULATIONS dispatch.
+
+        Returns a formatted percentage string (e.g., "3.29%") or "N/A".
+        """
         try:
-            ps_tokens: list[str] = re.findall(r"-?[\d.]+", ps_value)
-            pfcf_tokens: list[str] = re.findall(r"-?[\d.]+", pfcf_value)
-
-            if not ps_tokens or not pfcf_tokens:
+            calc_fn: Callable[[list[float]], float | None] | None = (
+                _CALCULATIONS.get(ratio.calculation)
+            )
+            if calc_fn is None:
                 return "N/A"
 
-            ps_num: float = float(ps_tokens[0])
-            pfcf_num: float = float(pfcf_tokens[0])
-
-            if pfcf_num <= 0:
+            source_values: list[float] | None = (
+                self._extract_source_values(cells, ratio.source_labels)
+            )
+            if source_values is None:
                 return "N/A"
 
-            fcf_margin: float = (ps_num / pfcf_num) * 100.0
-            return f"{fcf_margin:.2f}%"
-        except (ValueError, ZeroDivisionError):
+            result: float | None = calc_fn(source_values)
+            if result is None:
+                return "N/A"
+
+            return f"{result:.2f}%"
+        except (ValueError, ZeroDivisionError, IndexError, TypeError):
             return "N/A"
 
     def parse_ratios(self, ratio_set: list[RatioInfo]) -> dict[str, str]:
@@ -62,6 +97,12 @@ class HtmlParser:
 
         Returns a dict mapping ratio name -> value string.
         Missing ratios get value "N/A".
+
+        For ratios with a non-empty finviz_label: looks up the value
+        directly from the HTML snapshot table.
+
+        For ratios with an empty finviz_label and non-empty calculation:
+        computes the value using the _CALCULATIONS dispatch dict.
         """
         results: dict[str, str] = {}
         label_to_name: dict[str, str] = {
@@ -96,10 +137,12 @@ class HtmlParser:
                             )
                     results[label_to_name[label_text]] = value_text
 
-            # Handle calculated ratios (empty finviz_label)
+            # Handle calculated ratios (empty finviz_label, non-empty calculation)
             for ratio in ratio_set:
-                if ratio.finviz_label == "" and ratio.name == "FCF Margin":
-                    results["FCF Margin"] = self._compute_fcf_margin(cells)
+                if ratio.finviz_label == "" and ratio.calculation:
+                    results[ratio.name] = self._compute_calculated_ratio(
+                        ratio, cells
+                    )
 
         except (AttributeError, IndexError, TypeError):
             pass

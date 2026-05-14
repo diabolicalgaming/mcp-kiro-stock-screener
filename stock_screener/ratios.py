@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,8 @@ class RatioInfo:
     importance: str
     format_type: str
     compare_direction: str
+    source_labels: list[str] = field(default_factory=list)
+    calculation: str = ""
 
 
 class OptimalRange:
@@ -141,6 +144,8 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "Measures how much revenue turns into cash.",
                 "percentage",
                 "higher_is_better",
+                source_labels=["P/S", "P/FCF"],
+                calculation="ps_div_pfcf_times_100",
             ),
         ],
         "value": [
@@ -149,14 +154,6 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "Beta",
                 "<1.0 low risk, >1.0 volatile",
                 "Measures volatility vs overall market.",
-                "multiple",
-                "lower_is_better",
-            ),
-            RatioInfo(
-                "P/E",
-                "P/E",
-                ">=20-50 (sector), <sector undervalued",
-                "How much investors pay for $1 of earnings.",
                 "multiple",
                 "lower_is_better",
             ),
@@ -177,10 +174,10 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "lower_is_better",
             ),
             RatioInfo(
-                "P/B",
-                "P/B",
-                "<1.5 stability, <1.0 undervaluation",
-                "Compares market value to net assets.",
+                "EV/EBITDA",
+                "EV/EBITDA",
+                "<10 signals undervaluation",
+                "Compares total company value to operating cash earnings.",
                 "multiple",
                 "lower_is_better",
             ),
@@ -193,12 +190,22 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "lower_is_better",
             ),
             RatioInfo(
-                "EV/EBITDA",
-                "EV/EBITDA",
-                "<10 signals undervaluation",
-                "Compares total company value to operating cash earnings.",
+                "EV/Revenue",
+                "EV/Sales",
+                "<5.0, <3.0 cheap",
+                "Measures how expensive the company is relative to its revenue.",
                 "multiple",
                 "lower_is_better",
+            ),
+            RatioInfo(
+                "Earnings Yield",
+                "",
+                ">=5%",
+                "Measures how much earnings you get for the stock price paid.",
+                "percentage",
+                "higher_is_better",
+                source_labels=["P/E"],
+                calculation="inverse_pe_times_100",
             ),
             RatioInfo(
                 "Debt/EQ",
