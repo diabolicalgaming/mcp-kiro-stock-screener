@@ -475,11 +475,11 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
 
-- [ ] 35. Clear stale cache entries and verify new value ratio set
-  - [ ] 35.1 Clear cached "value" entries from `~/.stock_screener/cache.json`
-    - Cached "value" type entries contain the old ratio names (P/E, P/B) and are missing the new ones (EV/Revenue, Earnings Yield)
-    - Remove all `"value"` sub-entries from every ticker in the cache file, or delete the entire cache file
-    - This ensures the next run fetches fresh industry averages with the correct ratio names
+- [ ] 35. Clear stale cache and verify new value ratio set
+  - [ ] 35.1 Delete the cache file at `~/.stock_screener/cache.json`
+    - The entire cache file contains stale "value" type entries with old ratio names (P/E, P/B) that are incompatible with the new ratio set (EV/Revenue, Earnings Yield)
+    - Delete `~/.stock_screener/cache.json` entirely rather than selectively removing entries
+    - The next run will re-fetch fresh industry averages for all stock types with the correct ratio names
     - _Requirements: 13.4_
 
 - [ ] 36. Checkpoint - Verify new value ratio set works end-to-end
