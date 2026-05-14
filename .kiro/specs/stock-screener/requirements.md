@@ -61,8 +61,8 @@ A Python command-line stock screener application that retrieves and displays fin
 6. ALL ratios in the "growth" Ratio_Set SHALL have `format_type="percentage"`.
 7. ALL ratios in the "value" Ratio_Set SHALL have `format_type="multiple"`, EXCEPT for Earnings Yield which SHALL have `format_type="percentage"`.
 8. THE Earnings Yield ratio SHALL be a Calculated_Ratio derived from the trailing P/E ratio using the formula: Earnings Yield = (1 / P_E) × 100. THE `finviz_label` field SHALL be set to an empty string `""` since it is not scraped directly. THE `source_labels` field SHALL be `["P/E"]` and the `calculation` field SHALL be `"inverse_pe_times_100"`.
-9. WHEN computing Earnings Yield, THE HtmlParser SHALL extract the numeric value for "P/E" from the Finviz_Page, compute 1 / P_E × 100, and return the result formatted as a percentage string (e.g., "3.29%").
-10. IF the P/E source value is missing, non-numeric, zero, or negative on the Finviz_Page, THEN THE HtmlParser SHALL return "N/A" for the Earnings Yield ratio.
+9. WHEN computing a Calculated_Ratio, THE HtmlParser SHALL extract the numeric values for each label in `source_labels` from the Finviz_Page, dispatch to the appropriate calculation function based on the `calculation` field, and return the result formatted as a percentage string (e.g., "3.29%"). For Earnings Yield (`calculation="inverse_pe_times_100"`), the formula is: (1 / P_E) × 100.
+10. IF any source value required by a Calculated_Ratio is missing, non-numeric, zero, or negative (where division is involved) on the Finviz_Page, THEN THE HtmlParser SHALL return "N/A" for that Calculated_Ratio.
 11. THE EV/Revenue ratio SHALL use the finviz label `"EV/Sales"` and display as "EV/Revenue" in the results table.
 
 ### Requirement 3: Optimal Value Descriptions
@@ -86,12 +86,12 @@ A Python command-line stock screener application that retrieves and displays fin
 
 3. THE Screener SHALL display an Optimal_Value description for each ratio in the value Ratio_Set as follows:
    - Beta: "<1.0 low risk, >1.0 volatile"
+   - P/E: ">=20-50 (sector), <sector undervalued"
    - Forward P/E: "<industry avg, >=10-20 stability"
    - PEG: "<1.0"
-   - EV/EBITDA: "<10 signals undervaluation"
+   - P/B: "<1.5 stability, <1.0 undervaluation"
    - P/S: "<2.0, <1.0 cheap"
-   - EV/Revenue: "<5.0, <3.0 cheap"
-   - Earnings Yield: ">=5%"
+   - EV/EBITDA: "<10 signals undervaluation"
    - Debt/EQ: "<1.0 for value stocks"
    - LT Debt/EQ: "<1.0 most sectors, <0.5 stable for dividend stocks"
    - Current Ratio: ">1.5 comfortable, <1.0 liquidity issues"
@@ -117,12 +117,12 @@ A Python command-line stock screener application that retrieves and displays fin
 
 3. THE Screener SHALL display an Importance description for each ratio in the value Ratio_Set as follows:
    - Beta: "Measures volatility vs overall market."
+   - P/E: "How much investors pay for $1 of earnings."
    - Forward P/E: "Shows if the stock is cheap or expensive based on future earnings."
    - PEG: "PEG <1.0 suggests undervalued relative to growth prospects."
-   - EV/EBITDA: "Compares total company value to operating cash earnings."
+   - P/B: "Compares market value to net assets."
    - P/S: "Compares price to annual revenue."
-   - EV/Revenue: "Measures how expensive the company is relative to its revenue."
-   - Earnings Yield: "Measures how much earnings you get for the stock price paid."
+   - EV/EBITDA: "Compares total company value to operating cash earnings."
    - Debt/EQ: "Shows reliance on debt vs own capital."
    - LT Debt/EQ: "Indicates financial stability and how safely dividends can be maintained."
    - Current Ratio: "Ability to cover ST liabilities with ST assets."

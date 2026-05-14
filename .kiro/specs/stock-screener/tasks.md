@@ -28,7 +28,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Create `main.py` entry point stub that imports and runs `StockScreenerApp`
     - _Requirements: 1.1_
 
-- [x] 2. Implement ratio data model and configuration
+- [ ] 2. Implement ratio data model and configuration
   - [x] 2.1 Create `stock_screener/ratios.py` with `RatioInfo` dataclass and `RatioConfigResolver` class
     - Define frozen `RatioInfo` dataclass with fields: `name`, `finviz_label`, `optimal`, `importance`, `format_type`
     - `format_type` is a `str` field with valid values `"percentage"` or `"multiple"` — indicates how the ratio's industry average value should be formatted
@@ -44,6 +44,21 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio
       - `"lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ
     - _Requirements: 2.4 (updated), 19 (scoring system)_
+  - [ ] 2.3 Update `_RATIO_SETS["value"]` to new value ratio set in `stock_screener/ratios.py`
+    - Remove the `P/E` RatioInfo entry (name: "P/E", finviz_label: "P/E")
+    - Remove the `P/B` RatioInfo entry (name: "P/B", finviz_label: "P/B")
+    - Add `EV/Revenue` RatioInfo entry: `RatioInfo("EV/Revenue", "EV/Sales", "<5.0, <3.0 cheap", "Measures how expensive the company is relative to its revenue.", "multiple", "lower_is_better")`
+    - Add `Earnings Yield` RatioInfo entry: `RatioInfo("Earnings Yield", "", ">=5%", "Measures how much earnings you get for the stock price paid.", "percentage", "higher_is_better")` — note empty `finviz_label` since it is a Calculated_Ratio
+    - Reorder the value list to: Beta, Forward P/E, PEG, EV/EBITDA, P/S, EV/Revenue, Earnings Yield, Debt/EQ, LT Debt/EQ, Current Ratio
+    - Ensure the total count remains 10 ratios
+    - Update `compare_direction` listings: add Earnings Yield to `"higher_is_better"`, add EV/Revenue to `"lower_is_better"`, remove P/E and P/B from `"lower_is_better"`
+    - _Requirements: 2.3, 2.7, 2.8, 2.11, 3.3, 4.3_
+  - [ ] 2.4 Add `source_labels` and `calculation` optional fields to `RatioInfo` dataclass in `stock_screener/ratios.py`
+    - Add `source_labels: list[str] = field(default_factory=list)` as an optional field on the `RatioInfo` dataclass
+    - Add `calculation: str = ""` as an optional field on the `RatioInfo` dataclass
+    - Update the `Earnings Yield` entry to include `source_labels=["P/E"]` and `calculation="inverse_pe_times_100"`
+    - Existing ratios remain unchanged (empty defaults)
+    - _Requirements: 2.8, 26.1_
 
 - [x] 3. Implement CLI argument parsing
   - [x] 3.1 Create `stock_screener/cli.py` with `ArgumentParser` class
@@ -75,7 +90,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Ensure WebDriver is properly quit in a finally block
     - _Requirements: 5.1, 5.4, 5.5, 7.4_
 
-- [x] 5. Implement HTML parsing with BeautifulSoup
+- [ ] 5. Implement HTML parsing with BeautifulSoup
   - [x] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
     - Initialize `BeautifulSoup` with `html.parser` in constructor
     - Implement `parse_ratios(ratio_set: list[RatioInfo]) -> dict[str, str]` to extract ratio values by label
@@ -86,6 +101,20 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - After extracting the value for the "Sales past 3/5Y" label, check if it matches the pattern `r"(-?[\d.]+%)(-?[\d.]+%)"` (two concatenated percentage values). If matched, reformat to `"{group1} / {group2}"` (e.g., "41.55%51.61%" → "41.55% / 51.61%"). If not matched (single value), store unchanged.
     - Wrap all parsing in try-except for graceful degradation
     - _Requirements: 5.2, 5.3, 5.6, 7.1, 7.2, 7.3, 27.1, 27.2, 27.4, 27.5_
+  - [ ] 5.2 Implement generic Calculated_Ratio support in `stock_screener/parser.py`
+    - In `parse_ratios()`, for each ratio in the ratio_set:
+      - If `ratio.finviz_label` is non-empty: look up the value directly from the HTML (existing behavior)
+      - If `ratio.finviz_label` is empty AND `ratio.calculation` is non-empty: treat as a Calculated_Ratio
+        - Extract the numeric values for each label in `ratio.source_labels` from the HTML
+        - Dispatch to a calculation function based on `ratio.calculation` using a `_CALCULATIONS` dict
+        - Format and store the result as a percentage string (e.g., `"3.29%"`)
+        - If any source value is missing, non-numeric, zero, or negative (where division is involved): store `"N/A"`
+    - Define a class-level or module-level `_CALCULATIONS` dispatch dict mapping calculation identifiers to callables:
+      - `"inverse_pe_times_100"`: `lambda vals: (1 / vals[0]) * 100 if vals[0] > 0 else None`
+      - `"ps_div_pfcf_times_100"`: `lambda vals: (vals[0] / vals[1]) * 100 if vals[1] > 0 else None`
+    - This approach is generic — adding future calculated ratios requires only a new `RatioInfo` entry and a new calculation function, no parser changes
+    - Wrap all calculations in a try-except block for safety
+    - _Requirements: 2.8, 2.9, 2.10, 26.1, 26.3, 26.4, 26.5, 26.6_
 
 - [x] 6. Checkpoint - Verify core data pipeline
   - Ensure all modules created so far are syntactically correct and importable, ask the user if questions arise.
@@ -446,4 +475,21 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
 
+- [ ] 35. Clear stale cache entries and verify new value ratio set
+  - [ ] 35.1 Clear cached "value" entries from `~/.stock_screener/cache.json`
+    - Cached "value" type entries contain the old ratio names (P/E, P/B) and are missing the new ones (EV/Revenue, Earnings Yield)
+    - Remove all `"value"` sub-entries from every ticker in the cache file, or delete the entire cache file
+    - This ensures the next run fetches fresh industry averages with the correct ratio names
+    - _Requirements: 13.4_
 
+- [ ] 36. Checkpoint - Verify new value ratio set works end-to-end
+  - Ensure `stock_screener/ratios.py` is syntactically correct and importable with the updated value ratio set
+  - Ensure `RatioConfigResolver.get_ratio_set("value")` returns exactly 10 ratios with the new composition
+  - Ensure `HtmlParser.parse_ratios()` correctly computes Earnings Yield from P/E for a stock with a valid P/E value
+  - Ensure `HtmlParser.parse_ratios()` returns "N/A" for Earnings Yield when P/E is missing or invalid
+  - Ensure `EV/Revenue` correctly maps to the finviz label "EV/Sales" and extracts the value
+  - Ensure the `get_ratio_definitions` MCP tool returns the updated value ratio definitions (EV/Revenue and Earnings Yield present, P/E and P/B absent)
+  - Ensure the `stock_screener` MCP tool returns correct results with the new value ratio set
+  - Ensure the industry average prompt for "value" stock type now includes both percentage and multiple format instructions (since Earnings Yield is `format_type="percentage"`)
+  - Run mypy and pylint to verify no type or lint errors
+  - Ask the user if questions arise.

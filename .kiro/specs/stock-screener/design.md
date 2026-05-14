@@ -192,9 +192,9 @@ The `compare_direction` field determines how the `Scorer` compares a stock's rea
 - `"higher_is_better"`: the stock scores a point if its real-time value > industry average (e.g., Dividend Yield, Gross Margin, Revenue Growth YoY)
 - `"lower_is_better"`: the stock scores a point if its real-time value < industry average (e.g., P/E, Debt/EQ, Beta)
 
-Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio.
+Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio, Earnings Yield.
 
-Ratios with `compare_direction="lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ.
+Ratios with `compare_direction="lower_is_better"`: Beta, Forward P/E, PEG, P/S, EV/Revenue, EV/EBITDA, Debt/EQ, LT Debt/EQ.
 
 ### 3. `stock_screener/scraper.py` — FinvizScraper class
 
@@ -287,6 +287,10 @@ class HtmlParser:
 - Extracts the first `<a>` tag text as sector, second `<a>` tag text as industry
 - Returns `("Unknown", "Unknown")` on any failure — never crashes
 - `parse_ratios` includes post-processing for the "Sales past 3/5Y" label: after extracting the raw text, it checks for two concatenated percentage values using regex `r"(-?[\d.]+%)(-?[\d.]+%)"`. If matched, the value is reformatted to `"{group1} / {group2}"` (e.g., `"41.55%51.61%"` → `"41.55% / 51.61%"`). Single values are stored unchanged. This ensures the display table shows both values in a human-readable format.
+- `parse_ratios` handles Calculated_Ratios generically: for each ratio in the ratio_set, if `finviz_label` is empty and `calculation` is non-empty, the parser extracts numeric values for each label in `source_labels` from the HTML and dispatches to a `_CALCULATIONS` dict mapping calculation identifiers to callables. This means adding future calculated ratios requires only a new `RatioInfo` entry and a new calculation function — no parser changes. Current calculations:
+  - `"inverse_pe_times_100"`: computes `(1 / P_E) × 100` → Earnings Yield (e.g., "3.29%")
+  - `"ps_div_pfcf_times_100"`: computes `(P/S ÷ P/FCF) × 100` → FCF Margin (e.g., "26.82%")
+  Returns "N/A" if any source value is missing, non-numeric, zero, or negative (where division is involved).
 
 ### 5. `stock_screener/industry.py` — IndustryAverageProvider class (NEW)
 
@@ -935,11 +939,11 @@ Return structure for `stock_screener` tool:
             "max_score": 10,
             "ratios": [
                 {
-                    "name": "P/E",
-                    "optimal": ">=20-50 (sector), <sector undervalued",
-                    "industry_average": "28.5",
-                    "realtime_value": "33.2",
-                    "importance": "How much investors pay for $1 of earnings."
+                    "name": "Forward P/E",
+                    "optimal": "<industry avg, >=10-20 stability",
+                    "industry_average": "24.0",
+                    "realtime_value": "28.94",
+                    "importance": "Shows if the stock is cheap or expensive based on future earnings."
                 },
                 ...
             ]
@@ -958,9 +962,9 @@ Return structure for `get_ratio_definitions` tool:
     "stock_type": "value",
     "ratios": [
         {
-            "name": "P/E",
-            "optimal": ">=20-50 (sector), <sector undervalued",
-            "importance": "How much investors pay for $1 of earnings.",
+            "name": "Forward P/E",
+            "optimal": "<industry avg, >=10-20 stability",
+            "importance": "Shows if the stock is cheap or expensive based on future earnings.",
             "format_type": "multiple",
             "compare_direction": "lower_is_better"
         },
@@ -1007,7 +1011,7 @@ class RatioInfo:
 Each stock type maps to a list of `RatioInfo` objects stored as a class-level dict in `RatioConfigResolver`. Each ratio includes a `format_type` field and a `compare_direction` field:
 - `"div"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Dividend Yield, Dividend Payout, Dividend Growth Rate)
 - `"growth"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin)
-- `"value"` ratios: all `format_type="multiple"`, mixed `compare_direction` — most are `"lower_is_better"` except Current Ratio which is `"higher_is_better"`
+- `"value"` ratios: mostly `format_type="multiple"` except Earnings Yield which is `format_type="percentage"`, mixed `compare_direction` — most are `"lower_is_better"` except Current Ratio and Earnings Yield which are `"higher_is_better"`
 
 ```python
 _RATIO_SETS: dict[str, list[RatioInfo]] = {
@@ -1036,18 +1040,18 @@ _RATIO_SETS: dict[str, list[RatioInfo]] = {
     "value": [
         RatioInfo("Beta", "Beta", "<1.0 low risk, >1.0 volatile",
                   "Measures volatility vs overall market.", "multiple", "lower_is_better"),
-        RatioInfo("P/E", "P/E", ">=20-50 (sector), <sector undervalued",
-                  "How much investors pay for $1 of earnings.", "multiple", "lower_is_better"),
         RatioInfo("Forward P/E", "Forward P/E", "<industry avg, >=10-20 stability",
                   "Shows if the stock is cheap or expensive based on future earnings.", "multiple", "lower_is_better"),
         RatioInfo("PEG", "PEG", "<1.0",
                   "PEG <1.0 suggests undervalued relative to growth prospects.", "multiple", "lower_is_better"),
-        RatioInfo("P/B", "P/B", "<1.5 stability, <1.0 undervaluation",
-                  "Compares market value to net assets.", "multiple", "lower_is_better"),
-        RatioInfo("P/S", "P/S", "<2.0, <1.0 cheap",
-                  "Compares price to annual revenue.", "multiple", "lower_is_better"),
         RatioInfo("EV/EBITDA", "EV/EBITDA", "<10 signals undervaluation",
                   "Compares total company value to operating cash earnings.", "multiple", "lower_is_better"),
+        RatioInfo("P/S", "P/S", "<2.0, <1.0 cheap",
+                  "Compares price to annual revenue.", "multiple", "lower_is_better"),
+        RatioInfo("EV/Revenue", "EV/Sales", "<5.0, <3.0 cheap",
+                  "Measures how expensive the company is relative to its revenue.", "multiple", "lower_is_better"),
+        RatioInfo("Earnings Yield", "", ">=5%",
+                  "Measures how much earnings you get for the stock price paid.", "percentage", "higher_is_better"),
         RatioInfo("Debt/EQ", "Debt/Eq", "<1.0 for value stocks",
                   "Shows reliance on debt vs own capital.", "multiple", "lower_is_better"),
         RatioInfo("LT Debt/EQ", "LT Debt/Eq", "<1.0 most sectors, <0.5 stable for dividend stocks",
@@ -1134,7 +1138,7 @@ Design decisions:
 - Asks for "approximate" values so the model provides best-effort data rather than refusing
 - Partitions ratios by `format_type` to give explicit per-group formatting instructions (Requirement 15.6)
 - For all-percentage ratio sets (div, growth), the prompt only includes the percentage template — preserving existing behavior
-- For the value ratio set (all multiples), the prompt only includes the multiple template
+- For the value ratio set (mixed format types: mostly multiples plus Earnings Yield as percentage), the prompt includes both templates — one for the multiple ratios and one for the percentage ratio(s)
 - Instructs the model to use "sector median growth rate" for growth metrics like EPS YoY and Revenue Growth
 - Lists only the ratio names from the active `Ratio_Set` (not all ratios)
 - Dynamically includes the current year in the prompt at runtime to get the most recent estimates
