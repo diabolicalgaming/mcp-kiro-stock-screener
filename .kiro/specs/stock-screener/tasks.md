@@ -44,7 +44,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio
       - `"lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ
     - _Requirements: 2.4 (updated), 19 (scoring system)_
-  - [ ] 2.3 Update `_RATIO_SETS["value"]` to new value ratio set in `stock_screener/ratios.py`
+  - [x] 2.3 Update `_RATIO_SETS["value"]` to new value ratio set in `stock_screener/ratios.py`
     - Remove the `P/E` RatioInfo entry (name: "P/E", finviz_label: "P/E")
     - Remove the `P/B` RatioInfo entry (name: "P/B", finviz_label: "P/B")
     - Add `EV/Revenue` RatioInfo entry: `RatioInfo("EV/Revenue", "EV/Sales", "<5.0, <3.0 cheap", "Measures how expensive the company is relative to its revenue.", "multiple", "lower_is_better")`
@@ -53,7 +53,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Ensure the total count remains 10 ratios
     - Update `compare_direction` listings: add Earnings Yield to `"higher_is_better"`, add EV/Revenue to `"lower_is_better"`, remove P/E and P/B from `"lower_is_better"`
     - _Requirements: 2.3, 2.7, 2.8, 2.11, 3.3, 4.3_
-  - [ ] 2.4 Add `source_labels` and `calculation` optional fields to `RatioInfo` dataclass in `stock_screener/ratios.py`
+  - [x] 2.4 Add `source_labels` and `calculation` optional fields to `RatioInfo` dataclass in `stock_screener/ratios.py`
     - Add `source_labels: list[str] = field(default_factory=list)` as an optional field on the `RatioInfo` dataclass
     - Add `calculation: str = ""` as an optional field on the `RatioInfo` dataclass
     - Update the `Earnings Yield` entry to include `source_labels=["P/E"]` and `calculation="inverse_pe_times_100"`
@@ -90,7 +90,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Ensure WebDriver is properly quit in a finally block
     - _Requirements: 5.1, 5.4, 5.5, 7.4_
 
-- [ ] 5. Implement HTML parsing with BeautifulSoup
+- [x] 5. Implement HTML parsing with BeautifulSoup
   - [x] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
     - Initialize `BeautifulSoup` with `html.parser` in constructor
     - Implement `parse_ratios(ratio_set: list[RatioInfo]) -> dict[str, str]` to extract ratio values by label
@@ -101,7 +101,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - After extracting the value for the "Sales past 3/5Y" label, check if it matches the pattern `r"(-?[\d.]+%)(-?[\d.]+%)"` (two concatenated percentage values). If matched, reformat to `"{group1} / {group2}"` (e.g., "41.55%51.61%" → "41.55% / 51.61%"). If not matched (single value), store unchanged.
     - Wrap all parsing in try-except for graceful degradation
     - _Requirements: 5.2, 5.3, 5.6, 7.1, 7.2, 7.3, 27.1, 27.2, 27.4, 27.5_
-  - [ ] 5.2 Implement generic Calculated_Ratio support in `stock_screener/parser.py`
+  - [x] 5.2 Implement generic Calculated_Ratio support in `stock_screener/parser.py`
     - In `parse_ratios()`, for each ratio in the ratio_set:
       - If `ratio.finviz_label` is non-empty: look up the value directly from the HTML (existing behavior)
       - If `ratio.finviz_label` is empty AND `ratio.calculation` is non-empty: treat as a Calculated_Ratio
@@ -159,7 +159,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - _Requirements: 8.1, 8.2, 8.3_
 
 - [x] 11. Create `stock_screener/industry.py` with `IndustryAverageProvider` class
-  - [ ] 11.1 Create the new module `stock_screener/industry.py`
+  - [x] 11.1 Create the new module `stock_screener/industry.py`
     - Import `openai`, `json`, `datetime`, `rich.console.Console`, and `stock_screener.ratios.RatioInfo`
     - Define class constant `MODEL: str = "gpt-5.4-mini"`
     - Implement `__init__(self, api_key: str)` that creates an `openai.OpenAI` client with the explicit `api_key`
@@ -475,8 +475,8 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
 
-- [ ] 35. Clear stale cache and verify new value ratio set
-  - [ ] 35.1 Delete the cache file at `~/.stock_screener/cache.json`
+- [x] 35. Clear stale cache and verify new value ratio set
+  - [x] 35.1 Delete the cache file at `~/.stock_screener/cache.json`
     - The entire cache file contains stale "value" type entries with old ratio names (P/E, P/B) that are incompatible with the new ratio set (EV/Revenue, Earnings Yield)
     - Delete `~/.stock_screener/cache.json` entirely rather than selectively removing entries
     - The next run will re-fetch fresh industry averages for all stock types with the correct ratio names
