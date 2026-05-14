@@ -86,12 +86,12 @@ A Python command-line stock screener application that retrieves and displays fin
 
 3. THE Screener SHALL display an Optimal_Value description for each ratio in the value Ratio_Set as follows:
    - Beta: "<1.0 low risk, >1.0 volatile"
-   - P/E: ">=20-50 (sector), <sector undervalued"
    - Forward P/E: "<industry avg, >=10-20 stability"
    - PEG: "<1.0"
-   - P/B: "<1.5 stability, <1.0 undervaluation"
-   - P/S: "<2.0, <1.0 cheap"
    - EV/EBITDA: "<10 signals undervaluation"
+   - P/S: "<2.0, <1.0 cheap"
+   - EV/Revenue: "<5.0, <3.0 cheap"
+   - Earnings Yield: ">=5%"
    - Debt/EQ: "<1.0 for value stocks"
    - LT Debt/EQ: "<1.0 most sectors, <0.5 stable for dividend stocks"
    - Current Ratio: ">1.5 comfortable, <1.0 liquidity issues"
@@ -117,12 +117,12 @@ A Python command-line stock screener application that retrieves and displays fin
 
 3. THE Screener SHALL display an Importance description for each ratio in the value Ratio_Set as follows:
    - Beta: "Measures volatility vs overall market."
-   - P/E: "How much investors pay for $1 of earnings."
    - Forward P/E: "Shows if the stock is cheap or expensive based on future earnings."
    - PEG: "PEG <1.0 suggests undervalued relative to growth prospects."
-   - P/B: "Compares market value to net assets."
-   - P/S: "Compares price to annual revenue."
    - EV/EBITDA: "Compares total company value to operating cash earnings."
+   - P/S: "Compares price to annual revenue."
+   - EV/Revenue: "Measures how expensive the company is relative to its revenue."
+   - Earnings Yield: "Measures how much earnings you get for the stock price paid."
    - Debt/EQ: "Shows reliance on debt vs own capital."
    - LT Debt/EQ: "Indicates financial stability and how safely dividends can be maintained."
    - Current Ratio: "Ability to cover ST liabilities with ST assets."
