@@ -55,7 +55,7 @@ A Python command-line stock screener application that retrieves and displays fin
 
 1. WHEN the Stock_Type is "div", THE Screener SHALL use the dividend Ratio_Set containing: Dividend Yield, Dividend Payout, and Dividend Growth Rate (3-5 yr).
 2. WHEN the Stock_Type is "growth", THE Screener SHALL use the growth Ratio_Set containing: Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, and FCF Margin.
-3. WHEN the Stock_Type is "value", THE Screener SHALL use the value Ratio_Set containing: Forward P/E, PEG, EV/EBITDA, P/S, EV/Revenue, Debt/EQ, LT Debt/EQ, Current Ratio, Beta, and Earnings Yield.
+3. WHEN the Stock_Type is "value", THE Screener SHALL use the value Ratio_Set containing: Beta, Forward P/E, PEG, EV/EBITDA, P/S, EV/Revenue, Earnings Yield, Debt/EQ, LT Debt/EQ, and Current Ratio.
 4. EACH RatioInfo SHALL include a `format_type` field with valid values `"percentage"` or `"multiple"` to indicate whether the ratio is a percentage-based metric or a plain multiple/coefficient.
 5. ALL ratios in the "div" Ratio_Set SHALL have `format_type="percentage"`.
 6. ALL ratios in the "growth" Ratio_Set SHALL have `format_type="percentage"`.
