@@ -1031,7 +1031,7 @@ _RATIO_SETS: dict[str, list[RatioInfo]] = {
         RatioInfo("Revenue Growth 3–5 Year CAGR", "Sales past 3/5Y", ">=10%",
                   "Average revenue growth over the past 3–5 years.", "percentage", "higher_is_better"),
         RatioInfo("FCF Margin", "", ">=10%",
-                  "Measures how much revenue converts to free cash flow.", "percentage", "higher_is_better"),
+                  "Measures how much revenue turns into cash.", "percentage", "higher_is_better"),
     ],
     "value": [
         RatioInfo("Beta", "Beta", "<1.0 low risk, >1.0 volatile",

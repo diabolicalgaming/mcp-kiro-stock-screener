@@ -109,7 +109,7 @@ A Python command-line stock screener application that retrieves and displays fin
    - EPS YoY: "Shows how fast profits are growing."
    - Revenue Growth YoY: "Shows top-line revenue expansion year over year."
    - Revenue Growth 3–5 Year CAGR: "Average revenue growth over the past 3–5 years."
-   - FCF Margin: "Measures how much revenue converts to free cash flow."
+   - FCF Margin: "Measures how much revenue turns into cash."
 
 3. THE Screener SHALL display an Importance description for each ratio in the value Ratio_Set as follows:
    - Beta: "Measures volatility vs overall market."
@@ -514,7 +514,7 @@ Output:
           "optimal": ">=10%",
           "industry_average": "20%",
           "realtime_value": "44.49%",
-          "importance": "Measures how much revenue converts to free cash flow."
+          "importance": "Measures how much revenue turns into cash."
         }
       ]
     },
@@ -615,7 +615,7 @@ Output:
 > | EPS YoY | >=15% annually | 14% | 73.51% | Shows how fast profits are growing. |
 > | Revenue Growth YoY | >=15% | 15% | 114.20% | Shows top-line revenue expansion year over year. |
 > | Revenue Growth 3–5 Year CAGR | >=10% | 18% | 69.21% | Average revenue growth over the past 3–5 years. |
-> | FCF Margin | >=10% | 20% | 44.49% | Measures how much revenue converts to free cash flow. |
+> | FCF Margin | >=10% | 20% | 44.49% | Measures how much revenue turns into cash. |
 >
 > **value: 5 / 10**
 >

@@ -138,7 +138,7 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "FCF Margin",
                 "",
                 ">=10%",
-                "Measures how much revenue converts to free cash flow.",
+                "Measures how much revenue turns into cash.",
                 "percentage",
                 "higher_is_better",
             ),
