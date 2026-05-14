@@ -27,6 +27,8 @@ A Python command-line stock screener application that retrieves and displays fin
 - **Cache_TTL**: The time-to-live duration (in days) after which a cached entry is considered expired and must be refreshed.
 - **Sector**: The broad market sector of the stock as displayed on the Finviz_Page (e.g., "Technology", "Healthcare").
 - **Industry**: The specific industry classification of the stock as displayed on the Finviz_Page (e.g., "Consumer Electronics", "Drug Manufacturers").
+- **Calculated_Ratio**: A ratio whose value is not directly scraped from a single finviz label but is derived by combining two or more scraped values using a formula (e.g., FCF Margin = P/S ÷ P/FCF × 100).
+- **Source_Ratio**: A finviz ratio used as an input to compute a Calculated_Ratio (e.g., P/S and P/FCF are source ratios for FCF Margin).
 
 ## Requirements
 
@@ -52,7 +54,7 @@ A Python command-line stock screener application that retrieves and displays fin
 #### Acceptance Criteria
 
 1. WHEN the Stock_Type is "div", THE Screener SHALL use the dividend Ratio_Set containing: Dividend Yield, Dividend Payout, and Dividend Growth Rate (3-5 yr).
-2. WHEN the Stock_Type is "growth", THE Screener SHALL use the growth Ratio_Set containing: Gross Margin, Operating Margin, ROE, ROA, EPS YoY, and EPS YoY (TTM).
+2. WHEN the Stock_Type is "growth", THE Screener SHALL use the growth Ratio_Set containing: Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, and FCF Margin.
 3. WHEN the Stock_Type is "value", THE Screener SHALL use the value Ratio_Set containing: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ, and Current Ratio.
 4. EACH RatioInfo SHALL include a `format_type` field with valid values `"percentage"` or `"multiple"` to indicate whether the ratio is a percentage-based metric or a plain multiple/coefficient.
 5. ALL ratios in the "div" Ratio_Set SHALL have `format_type="percentage"`.
@@ -73,10 +75,10 @@ A Python command-line stock screener application that retrieves and displays fin
 2. THE Screener SHALL display an Optimal_Value description for each ratio in the growth Ratio_Set as follows:
    - Gross Margin: ">=40%"
    - Operating Margin: ">=15%"
-   - ROE: ">=15%"
-   - ROA: ">=5%"
-   - EPS YoY: ">=15% annually "
-   - EPS YoY (TTM): ">=10%"
+   - EPS YoY: ">=15% annually"
+   - Revenue Growth YoY: ">=15%"
+   - Revenue Growth 3–5 Year CAGR: ">=10%"
+   - FCF Margin: ">=10%"
 
 3. THE Screener SHALL display an Optimal_Value description for each ratio in the value Ratio_Set as follows:
    - Beta: "<1.0 low risk, >1.0 volatile"
@@ -104,10 +106,10 @@ A Python command-line stock screener application that retrieves and displays fin
 2. THE Screener SHALL display an Importance description for each ratio in the growth Ratio_Set as follows:
    - Gross Margin: "% of revenue left after production costs."
    - Operating Margin: "Profit from core business before taxes."
-   - ROE: "Profitability of shareholder's capital."
-   - ROA: "Profitability using all company assets."
    - EPS YoY: "Shows how fast profits are growing."
-   - EPS YoY (TTM): "Measures if the company can actually grow its earnings."
+   - Revenue Growth YoY: "Shows top-line revenue expansion year over year."
+   - Revenue Growth 3–5 Year CAGR: "Average revenue growth over the past 3–5 years."
+   - FCF Margin: "Measures how much revenue converts to free cash flow."
 
 3. THE Screener SHALL display an Importance description for each ratio in the value Ratio_Set as follows:
    - Beta: "Measures volatility vs overall market."
@@ -487,20 +489,6 @@ Output:
           "importance": "Profit from core business before taxes."
         },
         {
-          "name": "ROE",
-          "optimal": ">=15%",
-          "industry_average": "18%",
-          "realtime_value": "101.49%",
-          "importance": "Profitability of shareholder's capital."
-        },
-        {
-          "name": "ROA",
-          "optimal": ">=5%",
-          "industry_average": "10%",
-          "realtime_value": "75.42%",
-          "importance": "Profitability using all company assets."
-        },
-        {
           "name": "EPS YoY",
           "optimal": ">=15% annually",
           "industry_average": "14%",
@@ -508,11 +496,25 @@ Output:
           "importance": "Shows how fast profits are growing."
         },
         {
-          "name": "EPS YoY (TTM)",
+          "name": "Revenue Growth YoY",
+          "optimal": ">=15%",
+          "industry_average": "15%",
+          "realtime_value": "114.20%",
+          "importance": "Shows top-line revenue expansion year over year."
+        },
+        {
+          "name": "Revenue Growth 3–5 Year CAGR",
           "optimal": ">=10%",
-          "industry_average": "12%",
-          "realtime_value": "66.12%",
-          "importance": "Measures if the company can actually grow its earnings."
+          "industry_average": "18%",
+          "realtime_value": "69.21%",
+          "importance": "Average revenue growth over the past 3–5 years."
+        },
+        {
+          "name": "FCF Margin",
+          "optimal": ">=10%",
+          "industry_average": "20%",
+          "realtime_value": "44.49%",
+          "importance": "Measures how much revenue converts to free cash flow."
         }
       ]
     },
@@ -610,10 +612,10 @@ Output:
 > |---|---|---|---|---|
 > | Gross Margin | >=40% | 53% | 71.07% | % of revenue left after production costs. |
 > | Operating Margin | >=15% | 24% | 60.38% | Profit from core business before taxes. |
-> | ROE | >=15% | 18% | 101.49% | Profitability of shareholder's capital. |
-> | ROA | >=5% | 10% | 75.42% | Profitability using all company assets. |
 > | EPS YoY | >=15% annually | 14% | 73.51% | Shows how fast profits are growing. |
-> | EPS YoY (TTM) | >=10% | 12% | 66.12% | Measures if the company can actually grow its earnings. |
+> | Revenue Growth YoY | >=15% | 15% | 114.20% | Shows top-line revenue expansion year over year. |
+> | Revenue Growth 3–5 Year CAGR | >=10% | 18% | 69.21% | Average revenue growth over the past 3–5 years. |
+> | FCF Margin | >=10% | 20% | 44.49% | Measures how much revenue converts to free cash flow. |
 >
 > **value: 5 / 10**
 >
@@ -672,3 +674,21 @@ Output:
   "error": "Unknown stock type 'invalid'. Valid types: ['div', 'growth', 'value']"
 }
 ```
+
+### Requirement 26: Calculated Ratios
+
+**User Story:** As a user, I want the growth screening to include FCF Margin as a calculated ratio derived from other finviz values, so that I can assess a company's cash generation efficiency even when the metric is not directly available on finviz.
+
+#### Acceptance Criteria
+
+1. THE RatioInfo dataclass SHALL support a new optional field `source_labels` (a list of finviz label strings) to identify the finviz values needed to compute a Calculated_Ratio, and a new optional field `calculation` (a string identifier) to specify the formula to apply.
+2. WHEN a RatioInfo has a non-empty `source_labels` and `calculation` field, THE HtmlParser SHALL treat it as a Calculated_Ratio and extract the values for each source label rather than looking up a single `finviz_label`.
+3. THE FCF Margin ratio SHALL have `source_labels=["P/S", "P/FCF"]` and `calculation="ps_div_pfcf_times_100"`, indicating the formula: FCF Margin = (P/S ÷ P/FCF) × 100.
+4. WHEN computing FCF Margin, THE HtmlParser SHALL extract the numeric values for "P/S" and "P/FCF" from the Finviz_Page, divide P/S by P/FCF, multiply by 100, and return the result formatted as a percentage string (e.g., "26.82%").
+5. IF either source value ("P/S" or "P/FCF") is missing or non-numeric on the Finviz_Page, THEN THE HtmlParser SHALL return "N/A" for the FCF Margin ratio.
+6. IF the "P/FCF" value is zero or negative (indicating no free cash flow), THEN THE HtmlParser SHALL return "N/A" for the FCF Margin ratio rather than producing an invalid result.
+7. THE `finviz_label` field on a Calculated_Ratio SHALL be set to an empty string `""` since it is not used for direct lookup.
+8. THE Revenue Growth YoY ratio SHALL use the finviz label `"Sales Y/Y TTM"` and display as "Revenue Growth YoY" in the results table.
+9. THE Revenue Growth 3–5 Year CAGR ratio SHALL use the finviz label `"Sales past 3/5Y"` and display as "Revenue Growth 3–5 Year CAGR" in the results table.
+10. WHEN the finviz field "Sales past 3/5Y" contains a single percentage value, THE HtmlParser SHALL use that value directly as the Revenue Growth 3–5 Year CAGR.
+11. WHEN the finviz field contains multiple values or an unexpected format, THE HtmlParser SHALL extract the first numeric percentage token as the Revenue Growth 3–5 Year CAGR value.
