@@ -716,6 +716,7 @@ Design decisions for `Scorer`:
   - The optimal range check reuses the same `_parse_optimal` / `_OptimalRange.is_within` logic from `TableRenderer`
 - `score_ratios` returns `(score, max_score)` tuple where `max_score` is always `len(ratio_set)` regardless of N/A values — this matches the requirement that max score = total ratios across selected stock types
 - N/A values for either real-time or industry average result in no point scored for that ratio
+- For "Revenue Growth 3–5 Year CAGR", when the finviz value contains a `/` separator (e.g., `"41.55%/51.61%"`), `score_ratios` splits on `/` and uses only the first segment (the 3-year CAGR) for score comparison. The full compound value is still displayed in the table unchanged.
 - The class is stateless — could use `@staticmethod` for all methods, but instance method on `score_ratios` allows future extension
 
 ### 7. `stock_screener/app.py` — StockScreenerApp class (UPDATED for scoring integration)

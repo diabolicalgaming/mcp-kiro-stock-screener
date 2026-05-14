@@ -76,9 +76,13 @@ class Scorer:
         """
         score: int = 0
         for ratio in ratio_set:
-            realtime: float | None = self._parse_numeric(
-                values.get(ratio.name, "N/A")
-            )
+            raw_realtime: str = values.get(ratio.name, "N/A")
+            if (
+                ratio.name == "Revenue Growth 3\u20135 Year CAGR"
+                and "/" in raw_realtime
+            ):
+                raw_realtime = raw_realtime.split("/")[0]
+            realtime: float | None = self._parse_numeric(raw_realtime)
             industry_avg: float | None = self._parse_numeric(
                 industry_averages.get(ratio.name, "N/A")
             )

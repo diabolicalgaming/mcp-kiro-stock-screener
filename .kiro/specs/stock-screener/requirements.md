@@ -691,4 +691,4 @@ Output:
 8. THE Revenue Growth YoY ratio SHALL use the finviz label `"Sales Y/Y TTM"` and display as "Revenue Growth YoY" in the results table.
 9. THE Revenue Growth 3–5 Year CAGR ratio SHALL use the finviz label `"Sales past 3/5Y"` and display as "Revenue Growth 3–5 Year CAGR" in the results table.
 10. WHEN the finviz field "Sales past 3/5Y" contains a single percentage value, THE HtmlParser SHALL use that value directly as the Revenue Growth 3–5 Year CAGR.
-11. WHEN the finviz field contains multiple values or an unexpected format, THE HtmlParser SHALL extract the first numeric percentage token as the Revenue Growth 3–5 Year CAGR value.
+11. WHEN the finviz field "Sales past 3/5Y" for Revenue Growth 3–5 Year CAGR contains multiple values separated by "/" (e.g., "41.55%/51.61%"), THE Results_Table SHALL display the full unmodified value, but THE Scorer SHALL use only the first value (the 3-year CAGR) for investment score comparison. This slash-split behavior SHALL apply exclusively to the Revenue Growth 3–5 Year CAGR ratio and SHALL NOT affect scoring for any other ratio.
