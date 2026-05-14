@@ -29,7 +29,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - _Requirements: 1.1_
 
 - [x] 2. Implement ratio data model and configuration
-  - [-] 2.1 Create `stock_screener/ratios.py` with `RatioInfo` dataclass and `RatioConfigResolver` class
+  - [x] 2.1 Create `stock_screener/ratios.py` with `RatioInfo` dataclass and `RatioConfigResolver` class
     - Define frozen `RatioInfo` dataclass with fields: `name`, `finviz_label`, `optimal`, `importance`, `format_type`
     - `format_type` is a `str` field with valid values `"percentage"` or `"multiple"` — indicates how the ratio's industry average value should be formatted
     - Implement `RatioConfigResolver` with `_RATIO_SETS` class-level dict mapping stock types to `list[RatioInfo]`
@@ -37,7 +37,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Implement `get_ratio_set()` method that raises `ValueError` for unknown stock types
     - Use strict typing on all parameters and return types
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3.1, 3.2, 3.3, 4.1, 4.2, 4.3_
-  - [~] 2.2 Add `compare_direction` field to `RatioInfo` dataclass in `stock_screener/ratios.py`
+  - [x] 2.2 Add `compare_direction` field to `RatioInfo` dataclass in `stock_screener/ratios.py`
     - Add `compare_direction: str` as the sixth field on the frozen `RatioInfo` dataclass, after `format_type`
     - Valid values: `"higher_is_better"` or `"lower_is_better"`
     - Update every `RatioInfo` instance in `_RATIO_SETS` to include the `compare_direction` argument:

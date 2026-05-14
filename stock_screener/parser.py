@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from bs4 import Tag
 from bs4 import NavigableString
 from bs4 import BeautifulSoup
@@ -15,6 +17,45 @@ class HtmlParser:
     def __init__(self, html: str) -> None:
         self._soup: BeautifulSoup = BeautifulSoup(html, "html.parser")
 
+    def _compute_fcf_margin(self, cells: list[Tag]) -> str:
+        """
+        Compute FCF Margin = (P/S ÷ P/FCF) × 100.
+
+        Returns a formatted percentage string (e.g., "26.82%") or "N/A"
+        if either source value is missing, non-numeric, or P/FCF is zero
+        or negative.
+        """
+        ps_value: str | None = None
+        pfcf_value: str | None = None
+
+        for i in range(0, len(cells) - 1, 2):
+            label_text: str = cells[i].get_text(strip=True)
+            if label_text == "P/S":
+                ps_value = cells[i + 1].get_text(strip=True)
+            elif label_text == "P/FCF":
+                pfcf_value = cells[i + 1].get_text(strip=True)
+
+        if ps_value is None or pfcf_value is None:
+            return "N/A"
+
+        try:
+            ps_tokens: list[str] = re.findall(r"-?[\d.]+", ps_value)
+            pfcf_tokens: list[str] = re.findall(r"-?[\d.]+", pfcf_value)
+
+            if not ps_tokens or not pfcf_tokens:
+                return "N/A"
+
+            ps_num: float = float(ps_tokens[0])
+            pfcf_num: float = float(pfcf_tokens[0])
+
+            if pfcf_num <= 0:
+                return "N/A"
+
+            fcf_margin: float = (ps_num / pfcf_num) * 100.0
+            return f"{fcf_margin:.2f}%"
+        except (ValueError, ZeroDivisionError):
+            return "N/A"
+
     def parse_ratios(self, ratio_set: list[RatioInfo]) -> dict[str, str]:
         """
         Extract values for each ratio in ratio_set from the HTML.
@@ -24,7 +65,9 @@ class HtmlParser:
         """
         results: dict[str, str] = {}
         label_to_name: dict[str, str] = {
-            ratio.finviz_label: ratio.name for ratio in ratio_set
+            ratio.finviz_label: ratio.name
+            for ratio in ratio_set
+            if ratio.finviz_label != ""
         }
 
         try:
@@ -43,6 +86,12 @@ class HtmlParser:
                 if label_text in label_to_name:
                     value_text: str = cells[i + 1].get_text(strip=True)
                     results[label_to_name[label_text]] = value_text
+
+            # Handle calculated ratios (empty finviz_label)
+            for ratio in ratio_set:
+                if ratio.finviz_label == "" and ratio.name == "FCF Margin":
+                    results["FCF Margin"] = self._compute_fcf_margin(cells)
+
         except (AttributeError, IndexError, TypeError):
             pass
 
