@@ -41,7 +41,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Add `compare_direction: str` as the sixth field on the frozen `RatioInfo` dataclass, after `format_type`
     - Valid values: `"higher_is_better"` or `"lower_is_better"`
     - Update every `RatioInfo` instance in `_RATIO_SETS` to include the `compare_direction` argument:
-      - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, ROE, ROA, EPS YoY, EPS YoY (TTM), Current Ratio
+      - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio
       - `"lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ
     - _Requirements: 2.4 (updated), 19 (scoring system)_
 

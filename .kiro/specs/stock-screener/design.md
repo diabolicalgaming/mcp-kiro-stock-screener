@@ -189,10 +189,10 @@ class RatioConfigResolver:
 ```
 
 The `compare_direction` field determines how the `Scorer` compares a stock's real-time value against the industry average:
-- `"higher_is_better"`: the stock scores a point if its real-time value > industry average (e.g., Dividend Yield, ROE, Gross Margin)
+- `"higher_is_better"`: the stock scores a point if its real-time value > industry average (e.g., Dividend Yield, Gross Margin, Revenue Growth YoY)
 - `"lower_is_better"`: the stock scores a point if its real-time value < industry average (e.g., P/E, Debt/EQ, Beta)
 
-Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, ROE, ROA, EPS YoY, EPS YoY (TTM), Current Ratio.
+Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio.
 
 Ratios with `compare_direction="lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ.
 
@@ -998,7 +998,7 @@ class RatioInfo:
 
 Each stock type maps to a list of `RatioInfo` objects stored as a class-level dict in `RatioConfigResolver`. Each ratio includes a `format_type` field and a `compare_direction` field:
 - `"div"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Dividend Yield, Dividend Payout, Dividend Growth Rate)
-- `"growth"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Gross Margin, Operating Margin, ROE, ROA, EPS YoY, EPS YoY TTM)
+- `"growth"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin)
 - `"value"` ratios: all `format_type="multiple"`, mixed `compare_direction` — most are `"lower_is_better"` except Current Ratio which is `"higher_is_better"`
 
 ```python
@@ -1016,14 +1016,14 @@ _RATIO_SETS: dict[str, list[RatioInfo]] = {
                   "% of revenue left after production costs.", "percentage", "higher_is_better"),
         RatioInfo("Operating Margin", "Oper. Margin", ">=15%",
                   "Profit from core business before taxes.", "percentage", "higher_is_better"),
-        RatioInfo("ROE", "ROE", ">=15%",
-                  "Profitability of shareholder's capital.", "percentage", "higher_is_better"),
-        RatioInfo("ROA", "ROA", ">=5%",
-                  "Profitability using all company assets.", "percentage", "higher_is_better"),
         RatioInfo("EPS YoY", "EPS this Y", ">=15% annually",
                   "Shows how fast profits are growing.", "percentage", "higher_is_better"),
-        RatioInfo("EPS YoY (TTM)", "EPS Y/Y TTM", ">=10%",
-                  "Measures if the company can actually grow its earnings.", "percentage", "higher_is_better"),
+        RatioInfo("Revenue Growth YoY", "Sales Y/Y TTM", ">=15%",
+                  "Shows top-line revenue expansion year over year.", "percentage", "higher_is_better"),
+        RatioInfo("Revenue Growth 3–5 Year CAGR", "Sales past 3/5Y", ">=10%",
+                  "Average revenue growth over the past 3–5 years.", "percentage", "higher_is_better"),
+        RatioInfo("FCF Margin", "", ">=10%",
+                  "Measures how much revenue converts to free cash flow.", "percentage", "higher_is_better"),
     ],
     "value": [
         RatioInfo("Beta", "Beta", "<1.0 low risk, >1.0 volatile",
@@ -1104,7 +1104,7 @@ For each non-empty group, a separate JSON template and format instruction is inc
 
 ```
 System: Return JSON only. No explanation. Every value must be a non-empty string.
-User: What are the approximate industry-average financial ratios for the {industry} sector ({sector}) for the current year {current_year}? For growth metrics like EPS YoY, use the sector median annual growth rate.
+User: What are the approximate industry-average financial ratios for the {industry} sector ({sector}) for the current year {current_year}? For growth metrics like EPS YoY and Revenue Growth, use the sector median annual growth rate.
 
 [If percentage_ratios is non-empty:]
 For the following ratios, values must be non-empty percentage strings (e.g. '15%'): {percentage_template}
@@ -1127,7 +1127,7 @@ Design decisions:
 - Partitions ratios by `format_type` to give explicit per-group formatting instructions (Requirement 15.6)
 - For all-percentage ratio sets (div, growth), the prompt only includes the percentage template — preserving existing behavior
 - For the value ratio set (all multiples), the prompt only includes the multiple template
-- Instructs the model to use "sector median growth rate" for growth metrics like EPS YoY
+- Instructs the model to use "sector median growth rate" for growth metrics like EPS YoY and Revenue Growth
 - Lists only the ratio names from the active `Ratio_Set` (not all ratios)
 - Dynamically includes the current year in the prompt at runtime to get the most recent estimates
 - Requests JSON output format to enable reliable parsing
