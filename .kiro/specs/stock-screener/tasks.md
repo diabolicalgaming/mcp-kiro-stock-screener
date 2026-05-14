@@ -75,16 +75,17 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Ensure WebDriver is properly quit in a finally block
     - _Requirements: 5.1, 5.4, 5.5, 7.4_
 
-- [x] 5. Implement HTML parsing with BeautifulSoup
-  - [x] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
+- [ ] 5. Implement HTML parsing with BeautifulSoup
+  - [ ] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
     - Initialize `BeautifulSoup` with `html.parser` in constructor
     - Implement `parse_ratios(ratio_set: list[RatioInfo]) -> dict[str, str]` to extract ratio values by label
     - Navigate finviz snapshot table where `<td>` cells alternate between label and value
     - Return "N/A" for any ratio not found in the HTML
     - Implement `parse_price() -> str` to extract current stock price, returning "N/A" if not found
     - Preserve special characters (%, -) as-is in extracted values
+    - After extracting the value for the "Sales past 3/5Y" label, check if it matches the pattern `r"(-?[\d.]+%)(-?[\d.]+%)"` (two concatenated percentage values). If matched, reformat to `"{group1} / {group2}"` (e.g., "41.55%51.61%" → "41.55% / 51.61%"). If not matched (single value), store unchanged.
     - Wrap all parsing in try-except for graceful degradation
-    - _Requirements: 5.2, 5.3, 5.6, 7.1, 7.2, 7.3_
+    - _Requirements: 5.2, 5.3, 5.6, 7.1, 7.2, 7.3, 27.1, 27.2, 27.4, 27.5_
 
 - [x] 6. Checkpoint - Verify core data pipeline
   - Ensure all modules created so far are syntactically correct and importable, ask the user if questions arise.
@@ -325,7 +326,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Verify `--no-cache` and `--refresh` flags apply uniformly to all stock types
   - Ask the user if questions arise.
 
-- [x] 28. Update `stock_screener/scorer.py` — `Scorer` class
+- [ ] 28. Update `stock_screener/scorer.py` — `Scorer` class
   - [x] 28.1 Update `_parse_numeric` in `stock_screener/scorer.py` to handle compound finviz values
     - Add `import re` to the module imports
     - Replace the current strip-and-float logic with `re.findall(r"-?[\d.]+", stripped)` to extract all numeric tokens
@@ -342,6 +343,11 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       (b) the real-time value falls within the optimal value range defined by `RatioInfo.optimal`
     - Reuse the optimal range parsing logic from `TableRenderer._parse_optimal` / `_OptimalRange.is_within`
     - _Requirements: 5.4, 19 (scoring rules)_
+  - [ ] 28.3 Update `score_ratios` in `stock_screener/scorer.py` to split on ` / ` for Revenue Growth 3–5 Year CAGR scoring
+    - Change the condition from `"/" in raw_realtime` to `" / " in raw_realtime` for the "Revenue Growth 3–5 Year CAGR" special case
+    - Split on `" / "` (space-slash-space) and take the first segment (the 3-year CAGR)
+    - Pass the first segment to `_parse_numeric()` for scoring
+    - _Requirements: 27.3_
 
 - [x] 29. Checkpoint - Verify scoring system with compound value parsing and dual-gate dividend scoring
   - Ensure `stock_screener/scorer.py` is syntactically correct and importable
@@ -439,3 +445,5 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - Ensure the lock timeout fallback works: if the lock cannot be acquired within 10 seconds, the operation proceeds with a warning rather than crashing
   - Run mypy and pylint to verify no type or lint errors
   - Ask the user if questions arise.
+
+

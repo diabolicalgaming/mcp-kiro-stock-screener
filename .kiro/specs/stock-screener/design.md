@@ -258,6 +258,12 @@ class HtmlParser:
         Extract values for each ratio in ratio_set from the HTML.
         Returns a dict mapping ratio name -> value string.
         Missing ratios get value "N/A".
+
+        Post-processing: For the "Sales past 3/5Y" label, detects
+        concatenated percentage values (e.g., "41.55%51.61%") using
+        regex r"(-?[\\d.]+%)(-?[\\d.]+%)" and reformats to
+        "{group1} / {group2}" (e.g., "41.55% / 51.61%") for
+        human-readable display. Single values are stored unchanged.
         """
         ...
 
@@ -280,6 +286,7 @@ class HtmlParser:
 - `parse_sector_industry` locates the `div` with class `quote-links whitespace-nowrap gap-8`
 - Extracts the first `<a>` tag text as sector, second `<a>` tag text as industry
 - Returns `("Unknown", "Unknown")` on any failure — never crashes
+- `parse_ratios` includes post-processing for the "Sales past 3/5Y" label: after extracting the raw text, it checks for two concatenated percentage values using regex `r"(-?[\d.]+%)(-?[\d.]+%)"`. If matched, the value is reformatted to `"{group1} / {group2}"` (e.g., `"41.55%51.61%"` → `"41.55% / 51.61%"`). Single values are stored unchanged. This ensures the display table shows both values in a human-readable format.
 
 ### 5. `stock_screener/industry.py` — IndustryAverageProvider class (NEW)
 
@@ -716,7 +723,7 @@ Design decisions for `Scorer`:
   - The optimal range check reuses the same `_parse_optimal` / `_OptimalRange.is_within` logic from `TableRenderer`
 - `score_ratios` returns `(score, max_score)` tuple where `max_score` is always `len(ratio_set)` regardless of N/A values — this matches the requirement that max score = total ratios across selected stock types
 - N/A values for either real-time or industry average result in no point scored for that ratio
-- For "Revenue Growth 3–5 Year CAGR", when the finviz value contains a `/` separator (e.g., `"41.55%/51.61%"`), `score_ratios` splits on `/` and uses only the first segment (the 3-year CAGR) for score comparison. The full compound value is still displayed in the table unchanged.
+- For "Revenue Growth 3–5 Year CAGR", when the value contains ` / ` (space-slash-space) — as reformatted by `HtmlParser.parse_ratios()` — `score_ratios` splits on `" / "` and uses only the first segment (the 3-year CAGR) for score comparison. The full reformatted value (e.g., `"41.55% / 51.61%"`) is still displayed in the table unchanged.
 - The class is stateless — could use `@staticmethod` for all methods, but instance method on `score_ratios` allows future extension
 
 ### 7. `stock_screener/app.py` — StockScreenerApp class (UPDATED for scoring integration)

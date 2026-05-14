@@ -692,3 +692,15 @@ Output:
 9. THE Revenue Growth 3–5 Year CAGR ratio SHALL use the finviz label `"Sales past 3/5Y"` and display as "Revenue Growth 3–5 Year CAGR" in the results table.
 10. WHEN the finviz field "Sales past 3/5Y" contains a single percentage value, THE HtmlParser SHALL use that value directly as the Revenue Growth 3–5 Year CAGR.
 11. WHEN the finviz field "Sales past 3/5Y" for Revenue Growth 3–5 Year CAGR contains multiple values separated by "/" (e.g., "41.55%/51.61%"), THE Results_Table SHALL display the full unmodified value, but THE Scorer SHALL use only the first value (the 3-year CAGR) for investment score comparison. This slash-split behavior SHALL apply exclusively to the Revenue Growth 3–5 Year CAGR ratio and SHALL NOT affect scoring for any other ratio.
+
+### Requirement 27: Revenue Growth 3–5 Year CAGR Value Parsing
+
+**User Story:** As a user, I want the Revenue Growth 3–5 Year CAGR to display both the 3-year and 5-year values clearly separated, and use only the 3-year value for scoring, so that the output is readable and the score is based on the shorter-term growth metric.
+
+#### Acceptance Criteria
+
+1. WHEN the finviz "Sales past 3/5Y" cell contains two concatenated percentage values (e.g., "41.55%51.61%"), THE HtmlParser SHALL reformat the value to "{first_value} / {second_value}" (e.g., "41.55% / 51.61%") before storing it in the results dictionary.
+2. THE reformatted value "41.55% / 51.61%" SHALL be displayed in the Real-Time Value column of the results table.
+3. WHEN scoring the "Revenue Growth 3–5 Year CAGR" ratio, THE Scorer SHALL split the value on " / " and use only the first segment (the 3-year CAGR) for comparison against the industry average.
+4. WHEN the finviz "Sales past 3/5Y" cell contains only a single percentage value, THE HtmlParser SHALL store it unchanged.
+5. THE regex pattern used to detect the two-value concatenation SHALL be `r"(-?[\d.]+%)(-?[\d.]+%)"`.
