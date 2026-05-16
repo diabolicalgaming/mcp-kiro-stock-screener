@@ -130,10 +130,10 @@ class RatioConfigResolver:  # pylint: disable=too-few-public-methods
                 "higher_is_better",
             ),
             RatioInfo(
-                "Revenue Growth 3\u20135 Year CAGR",
+                "Revenue Growth 3-5 Year CAGR",
                 "Sales past 3/5Y",
                 ">=10%",
-                "Average revenue growth over the past 3\u20135 years.",
+                "Average revenue growth over the past 3-5 years.",
                 "percentage",
                 "higher_is_better",
             ),
