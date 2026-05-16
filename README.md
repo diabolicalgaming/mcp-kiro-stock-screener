@@ -23,7 +23,7 @@ This project converts my kiro-stock-screener project to an MCP server.
    pyenv local 3.11.1
    ```
 
-2. **Google Chrome** — required by Selenium for headless web scraping. ChromeDriver is managed automatically by `webdriver-manager`.
+2. **Google Chrome** — required by Selenium for headless web scraping. ChromeDriver is managed automatically by Selenium's built-in `SeleniumManager` (included in Selenium 4.6+) — no additional driver management package is needed. This works on macOS (Intel and Apple Silicon), Linux, and Windows.
 
 3. **An OpenAI API key** — used to fetch industry-average data. Set it as an environment variable or pass it via `--api-key`.
 

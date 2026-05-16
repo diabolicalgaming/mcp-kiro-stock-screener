@@ -5,9 +5,6 @@ from __future__ import annotations
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 class ScrapeError(Exception):
@@ -26,7 +23,6 @@ class FinvizScraper:  # pylint: disable=too-few-public-methods
 
     def __init__(self) -> None:
         self._options: Options = self._build_options()
-        self._service: Service = self._build_service()
 
     def _build_options(self) -> Options:
         """Configure headless Chrome options with appropriate user-agent."""
@@ -42,17 +38,6 @@ class FinvizScraper:  # pylint: disable=too-few-public-methods
         )
         return options
 
-    def _build_service(self) -> Service:
-        """Build a Chrome Service using webdriver-manager to auto-resolve chromedriver."""
-        try:
-            driver_path: str = ChromeDriverManager().install()
-            return Service(executable_path=driver_path)
-        except Exception as exc:
-            raise ScrapeError(
-                message=f"Failed to install/locate chromedriver: {exc}",
-                status_code=None,
-            ) from exc
-
     def fetch_page(self, ticker: str) -> str:
         """
         Fetch the finviz quote page HTML for the given ticker.
@@ -63,7 +48,6 @@ class FinvizScraper:  # pylint: disable=too-few-public-methods
         driver: webdriver.Chrome | None = None
         try:
             driver = webdriver.Chrome(  # pylint: disable=not-callable
-                service=self._service,
                 options=self._options,
             )
             url: str = self.BASE_URL.format(ticker=ticker)
