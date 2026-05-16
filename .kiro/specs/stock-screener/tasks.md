@@ -84,6 +84,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - [x] 4.1 Create `stock_screener/scraper.py` with `ScrapeError` exception and `FinvizScraper` class
     - Define `ScrapeError(Exception)` with `message: str` and `status_code: int | None` attributes
     - Implement `FinvizScraper` with headless Chrome via `_build_options()` method
+    - ChromeDriver resolution is handled by Selenium's built-in SeleniumManager (4.6+) — no external driver management package needed. Works cross-platform on macOS (Intel and Apple Silicon), Linux, and Windows.
     - Set browser-like User-Agent header to avoid blocks
     - Implement `fetch_page(ticker: str) -> str` that navigates to `https://finviz.com/quote.ashx?t={ticker}`
     - Wrap all Selenium exceptions in `ScrapeError` via try-except

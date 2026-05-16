@@ -198,14 +198,14 @@ Ratios with `compare_direction="lower_is_better"`: Beta, Forward P/E, PEG, P/S, 
 
 ### 3. `stock_screener/scraper.py` — FinvizScraper class
 
-Handles web scraping via Selenium with a headless Chrome browser. No changes from existing design.
+Handles web scraping via Selenium with a headless Chrome browser. ChromeDriver is managed automatically by Selenium's built-in `SeleniumManager` (included in Selenium 4.6+) — no external driver management package is needed. This works cross-platform on macOS (Intel and Apple Silicon), Linux, and Windows.
 
 ```python
 from __future__ import annotations
 
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 
 class ScrapeError(Exception):
     """Raised when the finviz page cannot be retrieved."""
