@@ -54,7 +54,7 @@ A Python command-line stock screener application that retrieves and displays fin
 #### Acceptance Criteria
 
 1. WHEN the Stock_Type is "div", THE Screener SHALL use the dividend Ratio_Set containing: Dividend Yield, Dividend Payout, and Dividend Growth Rate (3-5 yr).
-2. WHEN the Stock_Type is "growth", THE Screener SHALL use the growth Ratio_Set containing: Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, and FCF Margin.
+2. WHEN the Stock_Type is "growth", THE Screener SHALL use the growth Ratio_Set containing: Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3-5 Year CAGR, and FCF Margin.
 3. WHEN the Stock_Type is "value", THE Screener SHALL use the value Ratio_Set containing: Beta, Forward P/E, PEG, EV/EBITDA, P/S, EV/Revenue, Earnings Yield, Debt/EQ, LT Debt/EQ, and Current Ratio.
 4. EACH RatioInfo SHALL include a `format_type` field with valid values `"percentage"` or `"multiple"` to indicate whether the ratio is a percentage-based metric or a plain multiple/coefficient.
 5. ALL ratios in the "div" Ratio_Set SHALL have `format_type="percentage"`.
@@ -81,7 +81,7 @@ A Python command-line stock screener application that retrieves and displays fin
    - Operating Margin: ">=15%"
    - EPS YoY: ">=15% annually"
    - Revenue Growth YoY: ">=15%"
-   - Revenue Growth 3–5 Year CAGR: ">=10%"
+   - Revenue Growth 3-5 Year CAGR: ">=10%"
    - FCF Margin: ">=10%"
 
 3. THE Screener SHALL display an Optimal_Value description for each ratio in the value Ratio_Set as follows:
@@ -112,7 +112,7 @@ A Python command-line stock screener application that retrieves and displays fin
    - Operating Margin: "Profit from core business before taxes."
    - EPS YoY: "Shows how fast profits are growing."
    - Revenue Growth YoY: "Shows top-line revenue expansion year over year."
-   - Revenue Growth 3–5 Year CAGR: "Average revenue growth over the past 3–5 years."
+   - Revenue Growth 3-5 Year CAGR: "Average revenue growth over the past 3-5 years."
    - FCF Margin: "Measures how much revenue turns into cash."
 
 3. THE Screener SHALL display an Importance description for each ratio in the value Ratio_Set as follows:
@@ -507,11 +507,11 @@ Output:
           "importance": "Shows top-line revenue expansion year over year."
         },
         {
-          "name": "Revenue Growth 3–5 Year CAGR",
+          "name": "Revenue Growth 3-5 Year CAGR",
           "optimal": ">=10%",
           "industry_average": "18%",
           "realtime_value": "69.21%",
-          "importance": "Average revenue growth over the past 3–5 years."
+          "importance": "Average revenue growth over the past 3-5 years."
         },
         {
           "name": "FCF Margin",
@@ -618,7 +618,7 @@ Output:
 > | Operating Margin | >=15% | 24% | 60.38% | Profit from core business before taxes. |
 > | EPS YoY | >=15% annually | 14% | 73.51% | Shows how fast profits are growing. |
 > | Revenue Growth YoY | >=15% | 15% | 114.20% | Shows top-line revenue expansion year over year. |
-> | Revenue Growth 3–5 Year CAGR | >=10% | 18% | 69.21% | Average revenue growth over the past 3–5 years. |
+> | Revenue Growth 3-5 Year CAGR | >=10% | 18% | 69.21% | Average revenue growth over the past 3-5 years. |
 > | FCF Margin | >=10% | 20% | 44.49% | Measures how much revenue turns into cash. |
 >
 > **value: 5 / 10**
@@ -693,18 +693,18 @@ Output:
 6. IF the "P/FCF" value is zero or negative (indicating no free cash flow), THEN THE HtmlParser SHALL return "N/A" for the FCF Margin ratio rather than producing an invalid result.
 7. THE `finviz_label` field on a Calculated_Ratio SHALL be set to an empty string `""` since it is not used for direct lookup.
 8. THE Revenue Growth YoY ratio SHALL use the finviz label `"Sales Y/Y TTM"` and display as "Revenue Growth YoY" in the results table.
-9. THE Revenue Growth 3–5 Year CAGR ratio SHALL use the finviz label `"Sales past 3/5Y"` and display as "Revenue Growth 3–5 Year CAGR" in the results table.
-10. WHEN the finviz field "Sales past 3/5Y" contains a single percentage value, THE HtmlParser SHALL use that value directly as the Revenue Growth 3–5 Year CAGR.
-11. WHEN the finviz field "Sales past 3/5Y" for Revenue Growth 3–5 Year CAGR contains multiple values separated by "/" (e.g., "41.55%/51.61%"), THE Results_Table SHALL display the full unmodified value, but THE Scorer SHALL use only the first value (the 3-year CAGR) for investment score comparison. This slash-split behavior SHALL apply exclusively to the Revenue Growth 3–5 Year CAGR ratio and SHALL NOT affect scoring for any other ratio.
+9. THE Revenue Growth 3-5 Year CAGR ratio SHALL use the finviz label `"Sales past 3/5Y"` and display as "Revenue Growth 3-5 Year CAGR" in the results table.
+10. WHEN the finviz field "Sales past 3/5Y" contains a single percentage value, THE HtmlParser SHALL use that value directly as the Revenue Growth 3-5 Year CAGR.
+11. WHEN the finviz field "Sales past 3/5Y" for Revenue Growth 3-5 Year CAGR contains multiple values separated by "/" (e.g., "41.55%/51.61%"), THE Results_Table SHALL display the full unmodified value, but THE Scorer SHALL use only the first value (the 3-year CAGR) for investment score comparison. This slash-split behavior SHALL apply exclusively to the Revenue Growth 3-5 Year CAGR ratio and SHALL NOT affect scoring for any other ratio.
 
-### Requirement 27: Revenue Growth 3–5 Year CAGR Value Parsing
+### Requirement 27: Revenue Growth 3-5 Year CAGR Value Parsing
 
-**User Story:** As a user, I want the Revenue Growth 3–5 Year CAGR to display both the 3-year and 5-year values clearly separated, and use only the 3-year value for scoring, so that the output is readable and the score is based on the shorter-term growth metric.
+**User Story:** As a user, I want the Revenue Growth 3-5 Year CAGR to display both the 3-year and 5-year values clearly separated, and use only the 3-year value for scoring, so that the output is readable and the score is based on the shorter-term growth metric.
 
 #### Acceptance Criteria
 
 1. WHEN the finviz "Sales past 3/5Y" cell contains two concatenated percentage values (e.g., "41.55%51.61%"), THE HtmlParser SHALL reformat the value to "{first_value} / {second_value}" (e.g., "41.55% / 51.61%") before storing it in the results dictionary.
 2. THE reformatted value "41.55% / 51.61%" SHALL be displayed in the Real-Time Value column of the results table.
-3. WHEN scoring the "Revenue Growth 3–5 Year CAGR" ratio, THE Scorer SHALL split the value on " / " and use only the first segment (the 3-year CAGR) for comparison against the industry average.
+3. WHEN scoring the "Revenue Growth 3-5 Year CAGR" ratio, THE Scorer SHALL split the value on " / " and use only the first segment (the 3-year CAGR) for comparison against the industry average.
 4. WHEN the finviz "Sales past 3/5Y" cell contains only a single percentage value, THE HtmlParser SHALL store it unchanged.
 5. THE regex pattern used to detect the two-value concatenation SHALL be `r"(-?[\d.]+%)(-?[\d.]+%)"`.

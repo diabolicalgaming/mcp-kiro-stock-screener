@@ -41,7 +41,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Add `compare_direction: str` as the sixth field on the frozen `RatioInfo` dataclass, after `format_type`
     - Valid values: `"higher_is_better"` or `"lower_is_better"`
     - Update every `RatioInfo` instance in `_RATIO_SETS` to include the `compare_direction` argument:
-      - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio
+      - `"higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate (3-5 yr), Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3-5 Year CAGR, FCF Margin, Current Ratio
       - `"lower_is_better"`: Beta, P/E, Forward P/E, PEG, P/B, P/S, EV/EBITDA, Debt/EQ, LT Debt/EQ
     - _Requirements: 2.4 (updated), 19 (scoring system)_
   - [x] 2.3 Update `_RATIO_SETS["value"]` to new value ratio set in `stock_screener/ratios.py`
@@ -372,8 +372,8 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       (b) the real-time value falls within the optimal value range defined by `RatioInfo.optimal`
     - Reuse the optimal range parsing logic from `TableRenderer._parse_optimal` / `_OptimalRange.is_within`
     - _Requirements: 5.4, 19 (scoring rules)_
-  - [x] 28.3 Update `score_ratios` in `stock_screener/scorer.py` to split on ` / ` for Revenue Growth 3–5 Year CAGR scoring
-    - Change the condition from `"/" in raw_realtime` to `" / " in raw_realtime` for the "Revenue Growth 3–5 Year CAGR" special case
+  - [x] 28.3 Update `score_ratios` in `stock_screener/scorer.py` to split on ` / ` for Revenue Growth 3-5 Year CAGR scoring
+    - Change the condition from `"/" in raw_realtime` to `" / " in raw_realtime` for the "Revenue Growth 3-5 Year CAGR" special case
     - Split on `" / "` (space-slash-space) and take the first segment (the 3-year CAGR)
     - Pass the first segment to `_parse_numeric()` for scoring
     - _Requirements: 27.3_

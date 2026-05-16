@@ -192,7 +192,7 @@ The `compare_direction` field determines how the `Scorer` compares a stock's rea
 - `"higher_is_better"`: the stock scores a point if its real-time value > industry average (e.g., Dividend Yield, Gross Margin, Revenue Growth YoY)
 - `"lower_is_better"`: the stock scores a point if its real-time value < industry average (e.g., P/E, Debt/EQ, Beta)
 
-Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin, Current Ratio, Earnings Yield.
+Ratios with `compare_direction="higher_is_better"`: Dividend Yield, Dividend Payout, Dividend Growth Rate, Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3-5 Year CAGR, FCF Margin, Current Ratio, Earnings Yield.
 
 Ratios with `compare_direction="lower_is_better"`: Beta, Forward P/E, PEG, P/S, EV/Revenue, EV/EBITDA, Debt/EQ, LT Debt/EQ.
 
@@ -727,7 +727,7 @@ Design decisions for `Scorer`:
   - The optimal range check reuses the same `_parse_optimal` / `_OptimalRange.is_within` logic from `TableRenderer`
 - `score_ratios` returns `(score, max_score)` tuple where `max_score` is always `len(ratio_set)` regardless of N/A values — this matches the requirement that max score = total ratios across selected stock types
 - N/A values for either real-time or industry average result in no point scored for that ratio
-- For "Revenue Growth 3–5 Year CAGR", when the value contains ` / ` (space-slash-space) — as reformatted by `HtmlParser.parse_ratios()` — `score_ratios` splits on `" / "` and uses only the first segment (the 3-year CAGR) for score comparison. The full reformatted value (e.g., `"41.55% / 51.61%"`) is still displayed in the table unchanged.
+- For "Revenue Growth 3-5 Year CAGR", when the value contains ` / ` (space-slash-space) — as reformatted by `HtmlParser.parse_ratios()` — `score_ratios` splits on `" / "` and uses only the first segment (the 3-year CAGR) for score comparison. The full reformatted value (e.g., `"41.55% / 51.61%"`) is still displayed in the table unchanged.
 - The class is stateless — could use `@staticmethod` for all methods, but instance method on `score_ratios` allows future extension
 
 ### 7. `stock_screener/app.py` — StockScreenerApp class (UPDATED for scoring integration)
@@ -1010,7 +1010,7 @@ class RatioInfo:
 
 Each stock type maps to a list of `RatioInfo` objects stored as a class-level dict in `RatioConfigResolver`. Each ratio includes a `format_type` field and a `compare_direction` field:
 - `"div"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Dividend Yield, Dividend Payout, Dividend Growth Rate)
-- `"growth"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3–5 Year CAGR, FCF Margin)
+- `"growth"` ratios: all `format_type="percentage"`, all `compare_direction="higher_is_better"` (Gross Margin, Operating Margin, EPS YoY, Revenue Growth YoY, Revenue Growth 3-5 Year CAGR, FCF Margin)
 - `"value"` ratios: mostly `format_type="multiple"` except Earnings Yield which is `format_type="percentage"`, mixed `compare_direction` — most are `"lower_is_better"` except Current Ratio and Earnings Yield which are `"higher_is_better"`
 
 ```python
@@ -1032,8 +1032,8 @@ _RATIO_SETS: dict[str, list[RatioInfo]] = {
                   "Shows how fast profits are growing.", "percentage", "higher_is_better"),
         RatioInfo("Revenue Growth YoY", "Sales Y/Y TTM", ">=15%",
                   "Shows top-line revenue expansion year over year.", "percentage", "higher_is_better"),
-        RatioInfo("Revenue Growth 3–5 Year CAGR", "Sales past 3/5Y", ">=10%",
-                  "Average revenue growth over the past 3–5 years.", "percentage", "higher_is_better"),
+        RatioInfo("Revenue Growth 3-5 Year CAGR", "Sales past 3/5Y", ">=10%",
+                  "Average revenue growth over the past 3-5 years.", "percentage", "higher_is_better"),
         RatioInfo("FCF Margin", "", ">=10%",
                   "Measures how much revenue turns into cash.", "percentage", "higher_is_better"),
     ],
