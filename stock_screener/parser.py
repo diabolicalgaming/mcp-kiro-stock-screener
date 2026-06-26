@@ -6,8 +6,8 @@ import re
 from collections.abc import Callable
 
 from bs4 import Tag
-from bs4 import NavigableString
 from bs4 import BeautifulSoup
+from bs4.element import NavigableString
 
 from stock_screener.ratios import RatioInfo
 

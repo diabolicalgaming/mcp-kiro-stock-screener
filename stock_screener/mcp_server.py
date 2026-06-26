@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from fastmcp import FastMCP
 from fastmcp.contrib.mcp_mixin import MCPMixin
@@ -66,7 +67,7 @@ class StockScreenerMcpServer(MCPMixin):
         ticker: str,
         sector: str,
         industry: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Process a single stock type and return a structured dict.
 
         Returns a dict with type, score, max_score, and ratios list.
@@ -111,7 +112,7 @@ class StockScreenerMcpServer(MCPMixin):
         stock_type: str,
         no_cache: bool,
         refresh: bool,
-    ) -> tuple[str, list[str]] | dict:
+    ) -> tuple[str, list[str]] | dict[str, str]:
         """Validate inputs and return (resolved_key, stock_types) or error dict."""
         if no_cache and refresh:
             return {
@@ -140,7 +141,7 @@ class StockScreenerMcpServer(MCPMixin):
     def _fetch_and_parse(
         self,
         ticker: str,
-    ) -> tuple[str, HtmlParser, str, str, str] | dict:
+    ) -> tuple[str, HtmlParser, str, str, str] | dict[str, str]:
         """Fetch finviz page and parse price/sector/industry.
 
         Returns (html, parser, price, sector, industry) or error dict.
@@ -173,7 +174,7 @@ class StockScreenerMcpServer(MCPMixin):
         api_key: str = "",
         no_cache: bool = False,
         refresh: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Screen a stock by ticker and type(s).
 
         Args:
@@ -187,7 +188,7 @@ class StockScreenerMcpServer(MCPMixin):
         per-type ratio data with scores, and cumulative investment score.
         Returns a dict with an "error" key on failure.
         """
-        validation: tuple[str, list[str]] | dict = self._validate_inputs(
+        validation: tuple[str, list[str]] | dict[str, str] = self._validate_inputs(
             api_key, stock_type, no_cache, refresh
         )
         if isinstance(validation, dict):
@@ -197,7 +198,7 @@ class StockScreenerMcpServer(MCPMixin):
 
         normalized_ticker: str = ticker.upper()
 
-        fetch_result: tuple[str, HtmlParser, str, str, str] | dict = (
+        fetch_result: tuple[str, HtmlParser, str, str, str] | dict[str, str] = (
             self._fetch_and_parse(normalized_ticker)
         )
         if isinstance(fetch_result, dict):
@@ -215,11 +216,11 @@ class StockScreenerMcpServer(MCPMixin):
 
         total_score: int = 0
         total_max: int = 0
-        type_results: list[dict] = []
+        type_results: list[dict[str, Any]] = []
 
         for st in stock_types:
             try:
-                result: dict = self._process_stock_type(
+                result: dict[str, Any] = self._process_stock_type(
                     st, parser, provider, cache, use_cache,
                     refresh, normalized_ticker, sector, industry_name,
                 )
@@ -248,7 +249,7 @@ class StockScreenerMcpServer(MCPMixin):
         name="get_ratio_definitions",
         description="Get the ratio definitions for a stock type.",
     )
-    def get_ratio_definitions(self, stock_type: str) -> dict:
+    def get_ratio_definitions(self, stock_type: str) -> dict[str, Any]:
         """Get the ratio definitions for a stock type.
 
         Args:

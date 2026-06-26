@@ -8,7 +8,7 @@ from dataclasses import field
 
 
 @dataclass(frozen=True)
-class RatioInfo:
+class RatioInfo:  # pylint: disable=too-many-instance-attributes
     """Represents a single financial ratio with its metadata."""
 
     name: str
