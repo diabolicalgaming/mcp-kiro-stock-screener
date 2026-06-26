@@ -161,7 +161,7 @@ class HtmlParser:
         """
         try:
             price_result: Tag | NavigableString | None = self._soup.find(
-                "strong", class_="quote-price_wrapper_price"
+                "strong", class_="quote-price_price"
             )
             price_tag: Tag | None = (
                 price_result if isinstance(price_result, Tag) else None
@@ -175,28 +175,46 @@ class HtmlParser:
 
     def parse_sector_industry(self) -> tuple[str, str]:
         """
-        Extract sector and industry from the quote-links div.
+        Extract sector and industry from the quote header.
+
+        Sector is found via the first 'quote-header_category' link
+        (direct text only, excluding nested spans).
+        Industry is found via the 'min-w-0 truncate' span.
 
         Returns a tuple of (sector, industry).
         Returns ("Unknown", "Unknown") if not found.
         """
         try:
-            div_result: Tag | NavigableString | None = self._soup.find(
-                "div", class_="quote-links whitespace-nowrap gap-8"
-            )
-            div_tag: Tag | None = (
-                div_result if isinstance(div_result, Tag) else None
-            )
-            if div_tag is None:
-                return ("Unknown", "Unknown")
+            sector: str = "Unknown"
+            industry: str = "Unknown"
 
-            links: list[Tag] = div_tag.find_all("a")
-            sector: str = (
-                links[0].get_text(strip=True) if len(links) > 0 else "Unknown"
+            # Extract industry from span with class "min-w-0 truncate"
+            industry_result: Tag | NavigableString | None = self._soup.find(
+                "span", class_="min-w-0 truncate"
             )
-            industry: str = (
-                links[1].get_text(strip=True) if len(links) > 1 else "Unknown"
+            if isinstance(industry_result, Tag):
+                industry = industry_result.get_text(strip=True) or "Unknown"
+
+            # Extract sector from the first "quote-header_category" link
+            # Use direct text (excluding nested span text) for sector
+            sector_result: Tag | NavigableString | None = self._soup.find(
+                "a", class_="quote-header_category"
             )
+            if isinstance(sector_result, Tag):
+                # Get only the direct text of the <a>, not nested elements
+                direct_texts: list[str] = [
+                    part.strip()
+                    for part in sector_result.find_all(
+                        string=True, recursive=False
+                    )
+                    if part.strip()
+                ]
+                if direct_texts:
+                    sector = direct_texts[0]
+                else:
+                    # Fallback: full text if no direct text found
+                    sector = sector_result.get_text(strip=True) or "Unknown"
+
             return (sector, industry)
         except (AttributeError, IndexError, TypeError):
             return ("Unknown", "Unknown")
