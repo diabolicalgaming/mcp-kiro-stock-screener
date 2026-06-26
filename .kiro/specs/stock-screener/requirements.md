@@ -256,8 +256,8 @@ A Python command-line stock screener application that retrieves and displays fin
 
 #### Acceptance Criteria
 
-1. WHEN the Finviz_Page HTML is parsed, THE HtmlParser SHALL extract the sector and industry from the `div` element with class `quote-links whitespace-nowrap gap-8`.
-2. THE HtmlParser SHALL extract the text content of the first `<a>` tag within that `div` as the Sector (e.g., "Technology") and the second `<a>` tag as the Industry (e.g., "Consumer Electronics").
+1. WHEN the Finviz_Page HTML is parsed, THE HtmlParser SHALL extract the sector from the `<a>` element with class `quote-header_category` (direct text only, excluding nested spans) and the industry from the `<span>` element with class `min-w-0 truncate`.
+2. THE HtmlParser SHALL extract the direct text content of the first `<a class="quote-header_category">` tag as the Sector (e.g., "Technology") and the text of the `<span class="min-w-0 truncate">` tag as the Industry (e.g., "Semiconductors").
 3. THE `parse_sector_industry()` method SHALL return a `tuple[str, str]` of `(sector, industry)`.
 4. IF the sector or industry cannot be found in the HTML, THE HtmlParser SHALL return `"Unknown"` for the missing value rather than crashing.
 5. THE Screener SHALL pass the extracted sector and industry to the IndustryAverageProvider for inclusion in the OpenAI prompt.

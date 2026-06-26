@@ -241,9 +241,9 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
 - [x] 20. Add `parse_sector_industry()` method to `HtmlParser`
   - [x] 20.1 Update `stock_screener/parser.py` to extract sector and industry from finviz HTML
     - Add `parse_sector_industry(self) -> tuple[str, str]` method
-    - Locate the `div` element with class `quote-links whitespace-nowrap gap-8`
-    - Extract the text of the first `<a>` tag as sector and the second `<a>` tag as industry
-    - Return `("Unknown", "Unknown")` if the div or `<a>` tags cannot be found
+    - Extract sector from the `<a>` element with class `quote-header_category` (direct text only, excluding nested spans)
+    - Extract industry from the `<span>` element with class `min-w-0 truncate`
+    - Return `("Unknown", "Unknown")` if the elements cannot be found
     - Wrap all parsing in try-except for graceful degradation
     - _Requirements: 15.1, 15.2, 15.3, 15.4_
 
