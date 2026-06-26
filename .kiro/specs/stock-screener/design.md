@@ -835,6 +835,7 @@ Exposes the stock screener pipeline as an MCP server using FastMCP. This is a th
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -858,7 +859,7 @@ def stock_screener(
     api_key: str = "",
     no_cache: bool = False,
     refresh: bool = False,
-) -> dict:
+) -> dict[str, Any]:
     """
     Screen a stock by ticker and type(s).
 
@@ -877,7 +878,7 @@ def stock_screener(
 
 
 @mcp.tool
-def get_ratio_definitions(stock_type: str) -> dict:
+def get_ratio_definitions(stock_type: str) -> dict[str, Any]:
     """
     Get the ratio definitions for a stock type.
 

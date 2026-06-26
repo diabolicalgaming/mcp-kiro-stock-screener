@@ -395,7 +395,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - Import `FastMCP` from `fastmcp`
     - Create module-level `mcp: FastMCP = FastMCP("stock-screener")` instance
     - Import `RatioConfigResolver` and `RatioInfo` from `stock_screener.ratios`
-    - Implement `get_ratio_definitions(stock_type: str) -> dict` tool decorated with `@mcp.tool`
+    - Implement `get_ratio_definitions(stock_type: str) -> dict[str, Any]` tool decorated with `@mcp.tool`
     - On valid stock type: return `{"stock_type": ..., "ratios": [...]}` where each ratio is a dict with `name`, `optimal`, `importance`, `format_type`, `compare_direction`
     - On invalid stock type (`ValueError` from `RatioConfigResolver`): return `{"error": "..."}` with descriptive message
     - Add `if __name__ == "__main__": mcp.run()` entry point block
@@ -403,7 +403,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
     - _Requirements: 24.1, 24.2, 24.4, 24.8, 24.11, 24.12_
   - [x] 30.2 Implement `stock_screener` tool in `stock_screener/mcp_server.py`
     - Import `FinvizScraper`, `ScrapeError`, `HtmlParser`, `Scorer`, `IndustryAverageProvider`, `IndustryAverageCache` from existing modules
-    - Implement `stock_screener(ticker, stock_type, api_key, no_cache, refresh) -> dict` tool decorated with `@mcp.tool`
+    - Implement `stock_screener(ticker, stock_type, api_key, no_cache, refresh) -> dict[str, Any]` tool decorated with `@mcp.tool`
     - Validate mutual exclusion: if both `no_cache` and `refresh` are True, return `{"error": "..."}`
     - Resolve API key: use `api_key` parameter if non-empty, else fall back to `os.environ.get("OPENAI_API_KEY")`, return `{"error": "..."}` if neither available
     - Parse comma-separated `stock_type` string, validate each against `RatioConfigResolver`, return `{"error": "..."}` on invalid type
