@@ -423,11 +423,12 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
       (c) Render a separate markdown table per stock type with columns: Ratio, Optimal Value, Industry Average, Real-Time Value, Importance
       (d) Show the score per stock type above each table (e.g., "value: 2 / 10")
       (e) End with the cumulative Investment Score as a percentage
-    - For multiple tickers, return a prompt string that instructs the LLM to:
+    - For multiple tickers, use `_build_multi_ticker_prompt()` which employs **few-shot prompting** with two embedded examples (NVDA and NFLX real data) that demonstrate the exact expected output format. The prompt instructs the LLM to:
       (a) Call the `stock_screener` tool once per ticker (all calls can be made in parallel)
       (b) Render results for each ticker separately, one after another
       (c) Use the same per-ticker format as single-ticker (banner header, per-type tables with scores, Investment Score)
       (d) Separate each ticker's output with a horizontal rule (`---`)
+      (e) Each stock type MUST have its own separate table with its own header row — enforced via few-shot examples showing Growth and Value as distinct tables
     - _Requirements: 24.14, 24.15, 24.16_
 
 - [x] 31. Register MCP server in workspace configuration

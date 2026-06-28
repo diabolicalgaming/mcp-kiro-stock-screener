@@ -925,6 +925,7 @@ Design decisions for `mcp_server.py`:
 - `mcp.run()` uses the default stdio transport, suitable for local MCP server registration
 - Existing classes are instantiated fresh per tool call (stateless) — `FinvizScraper`, `HtmlParser`, `Scorer`, `RatioConfigResolver`, `IndustryAverageProvider`, `IndustryAverageCache` are all reused as-is
 - `screen_stock` prompt supports single and multi-ticker input via comma-separated `ticker` parameter (e.g., `"AAPL"` or `"AAPL,MSFT,GOOG"`). For a single ticker, it instructs the LLM to call `stock_screener` once. For multiple tickers, it instructs the LLM to call `stock_screener` once per ticker (in parallel) and render each ticker's results separately, separated by horizontal rules (`---`). The prompt mirrors the CLI output format: banner header with ticker/price/types first, then per-type score label and ratio table, ending with cumulative Investment Score per ticker
+- The multi-ticker prompt (`_build_multi_ticker_prompt`) uses **few-shot prompting** with two concrete examples (NVDA and NFLX data) embedded directly in the prompt string. Each example demonstrates the exact expected output format: a banner header, followed by each stock type rendered as its own separate table with its own markdown header row, the Investment Score after all tables, and a horizontal rule separator. This prevents LLMs from merging ratios from different stock types into a single combined table.
 
 Return structure for `stock_screener` tool:
 ```python
@@ -1214,7 +1215,7 @@ A single stock type without a comma produces a one-element list.
 
 **Validates: Requirements 16.3**
 
-### Property 2.5: Single ticker enforcement and format validation
+### Property 3: Single ticker enforcement and format validation
 
 *For any* input string passed as the `ticker` positional argument:
 1. If the string contains a comma, `_validate_ticker` SHALL raise `ArgumentTypeError` with a message stating only one ticker is allowed and suggesting the MCP server.
@@ -1226,13 +1227,13 @@ Rejected examples: `"nke,deck"` (comma), `"123"` (numbers), `"nke!"` (special ch
 
 **Validates: Requirements 1.5, 1.6, 1.7, 1.8**
 
-### Property 3: Banner header contains all stock types in order
+### Property 4: Banner header contains all stock types in order
 
 *For any* ticker string, price string, and non-empty list of stock types, the rendered banner header text SHALL contain all stock types joined by `", "` in the exact order they appear in the input list.
 
 **Validates: Requirements 18.2, 18.3**
 
-### Property 4: Score calculation correctness
+### Property 5: Score calculation correctness
 
 *For any* ratio set with associated real-time values, industry averages (including "N/A" values), and stock type, the score returned by `Scorer.score_ratios` SHALL equal the count of ratios where:
 1. Both the real-time value and industry average are parseable to numeric values (not "N/A" or unparseable), AND
@@ -1245,28 +1246,28 @@ When the real-time value contains multiple numeric tokens (e.g., `"4.23 (2.91%)"
 
 The max_score SHALL always equal `len(ratio_set)`.
 
-**Validates: Requirements 5.4, 19 (scoring system)**
+**Validates: Requirements 5.4, 19**
 
-### Property 5: Stock type label contains score information
+### Property 6: Stock type label contains score information
 
 *For any* stock type string, score integer (0 ≤ score ≤ max), and max_score integer (≥ 0), the rendered stock type label SHALL contain the stock type name, the score number, and the max_score number in the format pattern `{stock_type}: {score} / {max_score}`.
 
-**Validates: Requirements 19 (stock type label with score)**
+**Validates: Requirements 19**
 
-### Property 6: Score percentage color mapping
+### Property 7: Score percentage color mapping
 
 *For any* percentage value in [0, 100], the color selected for the Investment Score banner SHALL be:
 - `green` if percentage > 70
 - `yellow` if 50 ≤ percentage ≤ 70
 - `red` if percentage < 50
 
-**Validates: Requirements 19 (Investment Score banner color scheme)**
+**Validates: Requirements 19**
 
-### Property 7: Cache file locking ensures atomic read-modify-write
+### Property 8: Cache file locking ensures atomic read-modify-write
 
 *For any* number of concurrent `IndustryAverageCache.put()` calls writing different ticker/stock_type entries simultaneously, the resulting cache file SHALL contain all entries from all calls — no entry SHALL be silently lost due to a concurrent overwrite. The `put()` method acquires an exclusive file lock via `filelock.FileLock` before reading the cache, merges the new entry, and writes back while holding the lock, ensuring the read-modify-write cycle is atomic. The locking mechanism is cross-platform, working on macOS, Linux, and Windows.
 
-**Validates: Requirement 25.1, 25.2**
+**Validates: Requirements 25.1, 25.2**
 
 ## Testing Strategy
 
