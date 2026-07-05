@@ -112,16 +112,18 @@ class HtmlParser:
         }
 
         try:
-            snapshot_result: Tag | NavigableString | None = self._soup.find(
-                "table", class_="snapshot-table2"
-            )
-            snapshot_table: Tag | None = (
-                snapshot_result if isinstance(snapshot_result, Tag) else None
-            )
-            if snapshot_table is None:
+            snapshot_tables: list[Tag] = [
+                tag for tag in self._soup.find_all(
+                    "table", class_="snapshot-table2"
+                )
+                if isinstance(tag, Tag)
+            ]
+            if not snapshot_tables:
                 return {ratio.name: "N/A" for ratio in ratio_set}
 
-            cells: list[Tag] = snapshot_table.find_all("td")
+            cells: list[Tag] = []
+            for snapshot_table in snapshot_tables:
+                cells.extend(snapshot_table.find_all("td"))
             for i in range(0, len(cells) - 1, 2):
                 label_text: str = cells[i].get_text(strip=True)
                 if label_text in label_to_name:
