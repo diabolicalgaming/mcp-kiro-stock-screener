@@ -286,6 +286,7 @@ class HtmlParser:
 - `parse_sector_industry` extracts sector from the `<a>` tag with class `quote-header_category` (direct text only, excluding nested spans)
 - Extracts industry from the `<span>` tag with class `min-w-0 truncate`
 - Returns `("Unknown", "Unknown")` on any failure — never crashes
+- `parse_ratios` aggregates `<td>` cells from all `<table class="snapshot-table2">` elements on the page using `find_all()`. Finviz splits its ratio data across multiple tables sharing the same CSS class; the parser collects cells from all of them before performing label matching.
 - `parse_ratios` includes post-processing for the "Sales past 3/5Y" label: after extracting the raw text, it checks for two concatenated percentage values using regex `r"(-?[\d.]+%)(-?[\d.]+%)"`. If matched, the value is reformatted to `"{group1} / {group2}"` (e.g., `"41.55%51.61%"` → `"41.55% / 51.61%"`). Single values are stored unchanged. This ensures the display table shows both values in a human-readable format.
 - `parse_ratios` handles Calculated_Ratios generically: for each ratio in the ratio_set, if `finviz_label` is empty and `calculation` is non-empty, the parser extracts numeric values for each label in `source_labels` from the HTML and dispatches to a `_CALCULATIONS` dict mapping calculation identifiers to callables. This means adding future calculated ratios requires only a new `RatioInfo` entry and a new calculation function — no parser changes. Current calculations:
   - `"inverse_pe_times_100"`: computes `(1 / P_E) × 100` → Earnings Yield (e.g., "3.29%")

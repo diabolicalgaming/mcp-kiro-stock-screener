@@ -95,7 +95,7 @@ A Python CLI stock screener that accepts a ticker symbol and one or more comma-s
   - [x] 5.1 Create `stock_screener/parser.py` with `HtmlParser` class
     - Initialize `BeautifulSoup` with `html.parser` in constructor
     - Implement `parse_ratios(ratio_set: list[RatioInfo]) -> dict[str, str]` to extract ratio values by label
-    - Navigate finviz snapshot table where `<td>` cells alternate between label and value
+    - Navigate all finviz `snapshot-table2` tables (finviz splits ratios across multiple tables with the same class) and aggregate their `<td>` cells, which alternate between label and value
     - Return "N/A" for any ratio not found in the HTML
     - Implement `parse_price() -> str` to extract current stock price, returning "N/A" if not found
     - Preserve special characters (%, -) as-is in extracted values
