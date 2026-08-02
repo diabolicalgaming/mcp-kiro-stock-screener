@@ -8,7 +8,7 @@
       ],
       "cwd": "/Users/taaibor1/repos/mine/mcp-kiro-stock-screener",
       "disabled": false,
-      "autoApprove": []
+      "autoApprove": ["stock_screener", "get_ratio_definitions"]
     }
   }
 }
