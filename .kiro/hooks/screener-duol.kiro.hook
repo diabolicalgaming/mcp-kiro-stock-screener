@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "DUOL",
+  "description": "Screen Duolingo (DUOL) as a growth and value stock using the stock screener MCP with refresh enabled.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run the stock_screener MCP tool with ticker=\"DUOL\", stock_type=\"growth,value\", and refresh=true. Present the full results."
+  }
+}
