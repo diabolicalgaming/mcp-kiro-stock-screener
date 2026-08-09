@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "VICI",
+  "description": "Screen VICI Properties (VICI) as a dividend, growth, and value stock using the stock screener MCP with refresh enabled.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run the stock_screener MCP tool with ticker=\"VICI\", stock_type=\"div,growth,value\", and refresh=true. Present the full results."
+  }
+}
