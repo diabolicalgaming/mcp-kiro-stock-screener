@@ -21,3 +21,9 @@
 | V      | November 3, 2026    | Q4 FY2026  |
 | PINS   | November 4, 2026    | Q3 2026    |
 | DUOL   | November 11, 2026   | Q3 2026    |
+
+## Notes
+
+* **ADBE**, **MSFT**, **PG**, **V**, and **ZS** have non-calendar fiscal years, so the quarter labels reflect their fiscal calendars.
+* **NVDA** and **PATH** also use offset fiscal years (FY2027 ends Jan 2027 for **NVDA**, Jan 2027 for **PATH**).
+* Dates are based on estimated next earnings as of today (Aug 9, 2026). Some that already reported recently (like **GPN** on Aug 5) may shift — **GPN**'s next unreported date would be ~November 2026, but sources still list Aug 5. I included the most commonly cited upcoming date from multiple sources.
