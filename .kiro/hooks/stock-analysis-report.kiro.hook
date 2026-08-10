@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Stock Analysis Report",
+  "description": "Combines stock screener MCP data with an earnings report file to produce intrinsic value calculations, bull/bear case, and buy recommendation for a Growth investor.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Follow these steps in order:\n\n1. Ask the user: \"What stock ticker would you like me to analyze?\"\n2. Wait for the ticker response.\n3. Check if the ticker matches one of the known pre-configured tickers (case-insensitive) and use the correct stock_type based on its group:\n   - Growth stocks (use stock_type=\"growth,value\", refresh=true): ADBE, DUOL, MSFT, NFLX, NOW, NVDA, ONON, PINS, SKHY, V, ZS\n   - Value stocks (use stock_type=\"growth,value\", refresh=true): GPN, PATH, PYPL\n   - Dividend stocks (use stock_type=\"div,growth,value\", refresh=true): HAL, KMI, PG, SLB, VICI\n   If the ticker is in one of these groups, call the stock_screener MCP tool with the appropriate stock_type and refresh=true. Present the full results.\n   If the ticker is NOT in any group: Ask the user: \"This ticker is not in your pre-configured list. What stock types should I screen for? (e.g., growth,value or div,growth,value)\" Wait for their response, then call the stock_screener MCP tool with the provided stock_type and refresh=true.\n4. After the stock screener results are displayed, ask the user: \"Please select or provide the path to the earnings report file for this ticker (you can drag a file into chat or type the path).\"\n5. Wait for the file.\n6. Once you have the screener results and the earnings report file, perform this analysis:\n\n   a. Read the provided earnings report file.\n   b. Summarize the earnings report focusing on the most relevant information that can affect the stock price (revenue growth, EPS, guidance, margins, key risks).\n   c. Combine the earnings summary with the stock screener data from step 3.\n   d. Calculate an intrinsic value for the stock using a DCF model based on the earnings data and growth metrics.\n   e. Calculate a second intrinsic value with a 20% Margin of Safety applied.\n   f. Compare the current stock price to both intrinsic values.\n   g. Determine if this is a \"buy now\" stock for a Growth investor who targets undervalued stocks.\n   h. Present a Bull Case scenario (reasons the stock could outperform).\n   i. Present a Bear Case scenario (reasons the stock could underperform).\n   j. Give a final recommendation with a confidence level.\n\n7. Format the output clearly with headers for each section."
+  }
+}
